@@ -95,13 +95,13 @@ export default function DashboardPage() {
       )}
 
       <section className={styles.grid} aria-label="Summary">
-        <StatCard label="Today's Attendance" value={attValue} hint={attHint} icon={svg(ICON.attendance)} />
-        <StatCard label="Leave Balance" value={leaveRemaining == null ? '—' : `${leaveRemaining} days`} hint="Paid leave remaining" icon={svg(ICON.leave)} />
-        <StatCard label="Latest Payslip" value={latestPayslip ? fmtMoney(latestPayslip.netPay, latestPayslip.currency) : '—'} hint={latestPayslip ? `Net · ${latestPayslip.month}` : 'No payslip yet'} icon={svg(ICON.pay)} />
+        <StatCard href="/attendance" label="Today's Attendance" value={attValue} hint={attHint} icon={svg(ICON.attendance)} />
+        <StatCard href="/leaves" label="Leave Balance" value={leaveRemaining == null ? '—' : `${leaveRemaining} days`} hint="Paid leave remaining" icon={svg(ICON.leave)} />
+        <StatCard href="/payroll" label="Latest Payslip" value={latestPayslip ? fmtMoney(latestPayslip.netPay, latestPayslip.currency) : '—'} hint={latestPayslip ? `Net · ${latestPayslip.month}` : 'No payslip yet'} icon={svg(ICON.pay)} />
         {isApprover ? (
-          <StatCard label="Pending Approvals" value={String(count.total)} hint={count.total ? 'Awaiting your decision' : 'All clear'} icon={svg(ICON.check)} />
+          <StatCard href="/approvals" label="Pending Approvals" value={String(count.total)} hint={count.total ? 'Awaiting your decision' : 'All clear'} icon={svg(ICON.check)} />
         ) : (
-          <StatCard label="Leave Taken" value={leaveUsed == null ? '—' : `${leaveUsed} days`} hint="This year" icon={svg(ICON.check)} />
+          <StatCard href="/leaves" label="Leave Taken" value={leaveUsed == null ? '—' : `${leaveUsed} days`} hint="This year" icon={svg(ICON.check)} />
         )}
       </section>
 
@@ -114,10 +114,10 @@ export default function DashboardPage() {
           {roster ? (
             roster.rows.length ? (
               <div className={styles.grid}>
-                <StatCard label="Headcount" value={String(roster.rows.length)} hint="In your scope" icon={svg(ICON.people)} />
-                <StatCard label="Present" value={present == null ? '—' : String(present)} hint="Checked in today" icon={svg(ICON.attendance)} />
-                <StatCard label="Not checked in" value={String(c?.notCheckedIn ?? 0)} hint="Yet to arrive" icon={svg(ICON.clock)} />
-                <StatCard label="Absent / Leave" value={`${c?.absent ?? 0} / ${c?.onLeave ?? 0}`} hint="Absent · on leave" icon={svg(ICON.x)} />
+                <StatCard href="/attendance" label="Headcount" value={String(roster.rows.length)} hint="In your scope" icon={svg(ICON.people)} />
+                <StatCard href="/attendance" label="Present" value={present == null ? '—' : String(present)} hint="Checked in today" icon={svg(ICON.attendance)} />
+                <StatCard href="/attendance" label="Not checked in" value={String(c?.notCheckedIn ?? 0)} hint="Yet to arrive" icon={svg(ICON.clock)} />
+                <StatCard href="/attendance" label="Absent / Leave" value={`${c?.absent ?? 0} / ${c?.onLeave ?? 0}`} hint="Absent · on leave" icon={svg(ICON.x)} />
               </div>
             ) : (
               <p className={styles.panelText}>No one in your team scope yet.</p>
