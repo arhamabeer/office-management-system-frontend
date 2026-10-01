@@ -23,7 +23,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: var(--space-4);
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
+}
+
+/* Top-level summary grid only (not the grids nested inside panels):
+   give it the same 24px rhythm the panels use, so the stat cards are
+   clearly separated from the announcements card instead of flush against it. */
+section.grid {
+  margin-top: var(--space-6);
 }
 
 .panel {
@@ -57,11 +64,6 @@
   margin-bottom: var(--space-2);
 }
 
-.notice {
-  padding: var(--space-3) 0;
-  border-top: 1px solid var(--color-border);
-}
-.notice:first-of-type { border-top: none; }
 .noticeTitle {
   display: flex;
   align-items: center;

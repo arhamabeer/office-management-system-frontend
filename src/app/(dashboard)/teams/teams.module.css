@@ -1,5 +1,8 @@
 .page {
-  max-width: 920px;
+  /* Fill the content width like the other dashboard pages (no lopsided
+     right margin); only cap + center on ultra-wide screens for readability. */
+  max-width: 1160px;
+  margin-inline: auto;
 }
 .header {
   display: flex;
