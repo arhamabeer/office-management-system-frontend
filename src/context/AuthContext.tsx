@@ -21,6 +21,10 @@ interface AuthState {
   reloadMe: () => Promise<void>;
   /** True for Owner accountType or Admin org role (org-wide management). */
   isOrgAdmin: boolean;
+  /** True for Owner/Admin OR Manager — may add & onboard employees and change
+   *  Member/Lead roles. Admin-only actions (deactivate, grant Manager/Admin)
+   *  still gate on isOrgAdmin / the backend. */
+  canManageEmployees: boolean;
 }
 
 const AuthCtx = createContext<AuthState | undefined>(undefined);
@@ -80,9 +84,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isOrgAdmin = !!user && (user.accountType === 'Owner' || user.orgRole === 'Admin');
+  const canManageEmployees = isOrgAdmin || (!!user && user.orgRole === 'Manager');
 
   return (
-    <AuthCtx.Provider value={{ user, profile, loading, login, logout, reloadMe, isOrgAdmin }}>
+    <AuthCtx.Provider
+      value={{ user, profile, loading, login, logout, reloadMe, isOrgAdmin, canManageEmployees }}
+    >
       {children}
     </AuthCtx.Provider>
   );

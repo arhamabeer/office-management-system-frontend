@@ -27,7 +27,11 @@ const emptyForm = {
 };
 
 export default function EmployeesPage() {
-  const { user, isOrgAdmin } = useAuth();
+  const { user, isOrgAdmin, canManageEmployees } = useAuth();
+  // Only an Owner can grant Admin; only Owner/Admin can grant Manager — so
+  // Managers are limited to Member/Lead in every role picker.
+  const roleDisabled = (r: string): boolean =>
+    (r === 'Admin' && user?.accountType !== 'Owner') || (r === 'Manager' && !isOrgAdmin);
   const [data, setData] = useState<Paginated<EmployeeProfileDTO> | null>(null);
   const [departments, setDepartments] = useState<DepartmentDTO[]>([]);
   const [q, setQ] = useState('');
@@ -200,7 +204,7 @@ export default function EmployeesPage() {
               : 'People visible to you (scoped to your role).'}
           </p>
         </div>
-        {isOrgAdmin && (
+        {canManageEmployees && (
           <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
             <input ref={fileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={onImportFile} />
             <button className={styles.btn} disabled={importing} onClick={() => fileRef.current?.click()}>
@@ -212,7 +216,7 @@ export default function EmployeesPage() {
           </div>
         )}
       </div>
-      {isOrgAdmin && (
+      {canManageEmployees && (
         <p className={styles.subtitle} style={{ marginBottom: 'var(--space-3)' }}>
           CSV columns: <code>email, firstName, lastName</code> (required), optional <code>designation, orgRole, employmentType, department</code>. Each new hire is emailed an invite.
         </p>
@@ -221,7 +225,7 @@ export default function EmployeesPage() {
       {error && <div className={`${styles.banner} ${styles.bannerError}`}>{error}</div>}
       {info && <div className={`${styles.banner} ${styles.bannerInfo}`}>{info}</div>}
 
-      {showCreate && isOrgAdmin && (
+      {showCreate && canManageEmployees && (
         <form className={styles.createPanel} onSubmit={onCreate}>
           <div className={styles.formGrid}>
             <label className={styles.formField}>
@@ -253,9 +257,9 @@ export default function EmployeesPage() {
               Organizational role
               <select className={styles.select} value={form.orgRole} onChange={(e) => setForm({ ...form, orgRole: e.target.value })}>
                 {ORG_ROLES.map((r) => (
-                  <option key={r} value={r} disabled={r === 'Admin' && user?.accountType !== 'Owner'}>
+                  <option key={r} value={r} disabled={roleDisabled(r)}>
                     {r}
-                    {r === 'Admin' && user?.accountType !== 'Owner' ? ' (Owner only)' : ''}
+                    {roleDisabled(r) ? (r === 'Admin' ? ' (Owner only)' : ' (Admin only)') : ''}
                   </option>
                 ))}
               </select>
@@ -291,17 +295,20 @@ export default function EmployeesPage() {
               <th scope="col">Department</th>
               <th scope="col">Role</th>
               <th scope="col">Status</th>
-              {isOrgAdmin && <th scope="col" style={{ textAlign: 'right' }}>Actions</th>}
+              {canManageEmployees && <th scope="col" style={{ textAlign: 'right' }}>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={isOrgAdmin ? 6 : 5} className={styles.empty}>Loading…</td>
+                <td colSpan={canManageEmployees ? 6 : 5} className={styles.empty}>Loading…</td>
               </tr>
             ) : data && data.items.length ? (
               data.items.map((emp) => {
                 const isSelf = emp.userId === user?.id;
+                // A Manager cannot change someone who is already Manager/Admin/Owner.
+                const elevatedTarget =
+                  emp.orgRole === 'Manager' || emp.orgRole === 'Admin' || emp.accountType === 'Owner';
                 const statusClass =
                   emp.status === 'Active'
                     ? styles.statusActive
@@ -327,18 +334,18 @@ export default function EmployeesPage() {
                     <td>
                       <span className={`${styles.status} ${statusClass}`}>{emp.status}</span>
                     </td>
-                    {isOrgAdmin && (
+                    {canManageEmployees && (
                       <td>
                         <div className={styles.rowActions}>
                           <select
                             className={styles.miniSelect}
                             value={emp.orgRole}
-                            disabled={isSelf}
+                            disabled={isSelf || (!isOrgAdmin && elevatedTarget)}
                             onChange={(e) => onRole(emp, e.target.value)}
                             aria-label={`Change role for ${emp.fullName}`}
                           >
                             {ORG_ROLES.map((r) => (
-                              <option key={r} value={r} disabled={r === 'Admin' && user?.accountType !== 'Owner'}>
+                              <option key={r} value={r} disabled={roleDisabled(r)}>
                                 {r}
                               </option>
                             ))}
@@ -353,7 +360,7 @@ export default function EmployeesPage() {
                               </button>
                             </>
                           )}
-                          {!isSelf && emp.status !== 'Deactivated' && (
+                          {isOrgAdmin && !isSelf && emp.status !== 'Deactivated' && (
                             <button className={styles.linkBtn} onClick={() => onDeactivate(emp)}>
                               Deactivate
                             </button>
@@ -366,7 +373,7 @@ export default function EmployeesPage() {
               })
             ) : (
               <tr>
-                <td colSpan={isOrgAdmin ? 6 : 5} className={styles.empty}>No employees found.</td>
+                <td colSpan={canManageEmployees ? 6 : 5} className={styles.empty}>No employees found.</td>
               </tr>
             )}
           </tbody>
