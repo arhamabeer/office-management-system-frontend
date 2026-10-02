@@ -17,6 +17,11 @@ import type {
   AttendancePolicyDTO,
   HolidayDTO,
   RegularizationDTO,
+  RegularizationKind,
+  BiometricDeviceDTO,
+  BiometricDeviceStatus,
+  UnmappedPinDTO,
+  DeviceReconcileResultDTO,
   LeaveTypeDTO,
   LeavePolicyDTO,
   LeaveBalanceDTO,
@@ -152,15 +157,25 @@ export const attendanceApi = {
   regularizations: (scope: 'mine' | 'pending') =>
     api.get<RegularizationDTO[]>(`${P}/attendance/regularizations`, { scope }),
   createRegularization: (body: {
+    kind?: RegularizationKind;
     date: string;
     checkInAt: string;
-    checkOutAt: string;
+    checkOutAt?: string;
     reason: string;
   }) => api.post<RegularizationDTO>(`${P}/attendance/regularizations`, body),
   approveRegularization: (id: string, comment?: string) =>
     api.patch<RegularizationDTO>(`${P}/attendance/regularizations/${id}/approve`, { comment }),
   rejectRegularization: (id: string, comment?: string) =>
     api.patch<RegularizationDTO>(`${P}/attendance/regularizations/${id}/reject`, { comment }),
+  // --- biometric devices (Admin/Owner) ---
+  devices: () => api.get<BiometricDeviceDTO[]>(`${P}/attendance/devices`),
+  updateDevice: (id: string, body: { label?: string; status?: BiometricDeviceStatus }) =>
+    api.patch<BiometricDeviceDTO>(`${P}/attendance/devices/${id}`, body),
+  unmappedPins: () => api.get<UnmappedPinDTO[]>(`${P}/attendance/devices/unmapped`),
+  mapPin: (body: { pin: string; userId: string }) =>
+    api.post<{ matched: number; derived: number }>(`${P}/attendance/devices/map`, body),
+  reconcileDevices: (body: { from?: string; to?: string } = {}) =>
+    api.post<DeviceReconcileResultDTO>(`${P}/attendance/devices/reconcile`, body),
   /** Download the team CSV (auth via Bearer, then a blob download). */
   downloadTeamCsv: async (params: TeamAttendanceParams = {}) => {
     const qs = new URLSearchParams();

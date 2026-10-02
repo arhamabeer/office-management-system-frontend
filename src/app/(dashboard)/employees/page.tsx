@@ -24,6 +24,7 @@ const emptyForm = {
   orgRole: 'Member',
   designation: '',
   departmentId: '',
+  biometricUserId: '',
 };
 
 export default function EmployeesPage() {
@@ -117,6 +118,7 @@ export default function EmployeesPage() {
       };
       if (form.designation.trim()) body.designation = form.designation.trim();
       if (form.departmentId) body.departmentId = form.departmentId;
+      if (form.biometricUserId.trim()) body.biometricUserId = form.biometricUserId.trim();
       const res = await employeesApi.create(body);
       setInfo(
         res.inviteUrl
@@ -243,6 +245,10 @@ export default function EmployeesPage() {
             <label className={styles.formField}>
               Designation
               <input className={styles.search} value={form.designation} onChange={(e) => setForm({ ...form, designation: e.target.value })} />
+            </label>
+            <label className={styles.formField}>
+              Device ID
+              <input className={styles.search} value={form.biometricUserId} onChange={(e) => setForm({ ...form, biometricUserId: e.target.value })} placeholder="Biometric PIN (optional)" />
             </label>
             <label className={styles.formField}>
               Department

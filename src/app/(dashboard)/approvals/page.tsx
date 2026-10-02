@@ -150,7 +150,7 @@ export default function ApprovalsPage() {
                 const isSelf = row.userId === user?.id;
                 return (
                   <tr key={`${row.kind}-${row.id}`}>
-                    <td>{row.kind === 'leave' ? `Leave · ${row.data.code}` : 'Regularization'}</td>
+                    <td>{row.kind === 'leave' ? `Leave · ${row.data.code}` : row.data.kind === 'DeviceDown' ? 'Attendance · device down' : 'Correction'}</td>
                     <td>
                       {row.data.employeeName ?? '—'}
                       {isSelf ? ' (you)' : ''}
@@ -158,7 +158,7 @@ export default function ApprovalsPage() {
                     <td>
                       {row.kind === 'leave'
                         ? `${row.data.startDate} → ${row.data.endDate} · ${row.data.days}d`
-                        : `${row.data.date} · ${fmtTime(row.data.requestedCheckInAt)}–${fmtTime(row.data.requestedCheckOutAt)}`}
+                        : `${row.data.date} · ${fmtTime(row.data.requestedCheckInAt)}${row.data.requestedCheckOutAt ? `–${fmtTime(row.data.requestedCheckOutAt)}` : ''}`}
                     </td>
                     <td>{row.data.reason}</td>
                     <td>

@@ -8,10 +8,14 @@ import type {
   PersonWeeksDTO,
   AttendancePeriod,
   RegularizationDTO,
+  RegularizationKind,
   AttendancePolicyDTO,
   HolidayDTO,
+  BiometricDeviceDTO,
+  UnmappedPinDTO,
+  EmployeeProfileDTO,
 } from '@ems/types';
-import { attendanceApi, fmtMinutes } from '@/lib/auth';
+import { attendanceApi, employeesApi, fmtMinutes } from '@/lib/auth';
 import { useAuth } from '@/context/AuthContext';
 import styles from './attendance.module.css';
 
@@ -26,6 +30,13 @@ function today(): string {
 function fmtTime(iso?: string): string {
   if (!iso) return '—';
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+function fmtDateTime(iso?: string): string {
+  if (!iso) return 'never';
+  return new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function regKindLabel(kind?: RegularizationKind): string {
+  return kind === 'DeviceDown' ? 'Device-down' : 'Correction';
 }
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
@@ -71,7 +82,8 @@ export default function AttendancePage() {
   const [my, setMy] = useState<MyAttendanceResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [myRequests, setMyRequests] = useState<RegularizationDTO[]>([]);
-  const [showReg, setShowReg] = useState(false);
+  // false = form hidden; otherwise the kind of request being raised.
+  const [showReg, setShowReg] = useState<false | RegularizationKind>(false);
   const [reg, setReg] = useState({ date: today(), inTime: '09:00', outTime: '18:00', reason: '' });
 
   // Team
@@ -93,6 +105,13 @@ export default function AttendancePage() {
   const [policy, setPolicy] = useState<AttendancePolicyDTO | null>(null);
   const [holidays, setHolidays] = useState<HolidayDTO[]>([]);
   const [holiday, setHoliday] = useState({ date: today(), name: '' });
+
+  // Biometric devices (Settings, admin only)
+  const [devices, setDevices] = useState<BiometricDeviceDTO[]>([]);
+  const [unmapped, setUnmapped] = useState<UnmappedPinDTO[]>([]);
+  const [people, setPeople] = useState<EmployeeProfileDTO[]>([]);
+  const [mapPick, setMapPick] = useState<Record<string, string>>({}); // pin -> userId
+  const [deviceBusy, setDeviceBusy] = useState(false);
 
   const loadMy = useCallback(async () => {
     setError(null);
@@ -147,10 +166,65 @@ export default function AttendancePage() {
       ]);
       setPolicy(p);
       setHolidays(h);
+      if (isOrgAdmin) {
+        const [devs, un, emp] = await Promise.all([
+          attendanceApi.devices(),
+          attendanceApi.unmappedPins(),
+          employeesApi.list({ pageSize: 100 }),
+        ]);
+        setDevices(devs);
+        setUnmapped(un);
+        setPeople(emp.items);
+      }
     } catch (e) {
       setError(errMsg(e));
     }
-  }, []);
+  }, [isOrgAdmin]);
+
+  const setDeviceStatus = async (id: string, status: 'Enabled' | 'Disabled') => {
+    setDeviceBusy(true);
+    setError(null);
+    try {
+      await attendanceApi.updateDevice(id, { status });
+      setInfo(`Device ${status.toLowerCase()}.`);
+      await loadSettings();
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setDeviceBusy(false);
+    }
+  };
+
+  const doMapPin = async (pin: string) => {
+    const userId = mapPick[pin];
+    if (!userId) return;
+    setDeviceBusy(true);
+    setError(null);
+    try {
+      const r = await attendanceApi.mapPin({ pin, userId });
+      setInfo(`Linked device ID ${pin} — ${r.derived} day(s) synced.`);
+      setMapPick((m) => ({ ...m, [pin]: '' }));
+      await loadSettings();
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setDeviceBusy(false);
+    }
+  };
+
+  const doReconcile = async () => {
+    setDeviceBusy(true);
+    setError(null);
+    try {
+      const r = await attendanceApi.reconcileDevices();
+      setInfo(`Re-synced ${r.daysRederived} day(s) (${r.from} → ${r.to}).`);
+      await loadSettings();
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setDeviceBusy(false);
+    }
+  };
 
   useEffect(() => {
     void loadMy();
@@ -208,16 +282,18 @@ export default function AttendancePage() {
   const submitReg = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const kind: RegularizationKind = showReg || 'Correction';
     try {
       await attendanceApi.createRegularization({
+        kind,
         date: reg.date,
         checkInAt: `${reg.date}T${reg.inTime}:00`,
-        checkOutAt: `${reg.date}T${reg.outTime}:00`,
+        checkOutAt: reg.outTime ? `${reg.date}T${reg.outTime}:00` : undefined,
         reason: reg.reason,
       });
       setShowReg(false);
       setReg({ date: today(), inTime: '09:00', outTime: '18:00', reason: '' });
-      setInfo('Correction request submitted.');
+      setInfo(kind === 'DeviceDown' ? 'Attendance submitted for approval.' : 'Correction request submitted.');
       await loadMy();
     } catch (e) {
       setError(errMsg(e));
@@ -374,14 +450,24 @@ export default function AttendancePage() {
           <div className={styles.toolbar}>
             <input className={styles.input} type="month" aria-label="Select month" value={month} onChange={(e) => setMonth(e.target.value)} />
             <div className={styles.spacer} />
-            <button className={styles.btn} onClick={() => setShowReg((v) => !v)}>
-              {showReg ? 'Cancel' : 'Request correction'}
+            <button className={styles.btn} onClick={() => setShowReg((v) => (v === 'Correction' ? false : 'Correction'))}>
+              {showReg === 'Correction' ? 'Cancel' : 'Request correction'}
+            </button>
+            <button className={styles.btn} onClick={() => setShowReg((v) => (v === 'DeviceDown' ? false : 'DeviceDown'))}>
+              {showReg === 'DeviceDown' ? 'Cancel' : 'Device was down'}
             </button>
           </div>
 
           {showReg && (
             <form className={styles.card} onSubmit={submitReg}>
-              <div className={styles.cardTitle}>Request a correction</div>
+              <div className={styles.cardTitle}>
+                {showReg === 'DeviceDown' ? 'Submit attendance (device was down)' : 'Request a correction'}
+              </div>
+              {showReg === 'DeviceDown' && (
+                <div className={styles.muted} style={{ marginBottom: 'var(--space-2)' }}>
+                  Use this only when the biometric device was off (e.g. a power cut). Your submission goes to your manager for approval.
+                </div>
+              )}
               <div className={styles.formGrid}>
                 <label className={styles.formField}>
                   Date
@@ -392,8 +478,8 @@ export default function AttendancePage() {
                   <input className={styles.input} type="time" value={reg.inTime} onChange={(e) => setReg({ ...reg, inTime: e.target.value })} required />
                 </label>
                 <label className={styles.formField}>
-                  Check-out
-                  <input className={styles.input} type="time" value={reg.outTime} onChange={(e) => setReg({ ...reg, outTime: e.target.value })} required />
+                  Check-out{showReg === 'DeviceDown' ? ' (optional)' : ''}
+                  <input className={styles.input} type="time" value={reg.outTime} onChange={(e) => setReg({ ...reg, outTime: e.target.value })} required={showReg !== 'DeviceDown'} />
                 </label>
                 <label className={styles.formField} style={{ gridColumn: '1 / -1' }}>
                   Reason
@@ -401,7 +487,9 @@ export default function AttendancePage() {
                 </label>
               </div>
               <div className={styles.formActions}>
-                <button className={`${styles.btn} ${styles.btnPrimary}`} type="submit">Submit request</button>
+                <button className={`${styles.btn} ${styles.btnPrimary}`} type="submit">
+                  {showReg === 'DeviceDown' ? 'Submit for approval' : 'Submit request'}
+                </button>
               </div>
             </form>
           )}
@@ -439,10 +527,10 @@ export default function AttendancePage() {
 
           {myRequests.length > 0 && (
             <div className={styles.card} style={{ marginTop: 'var(--space-4)' }}>
-              <div className={styles.cardTitle}>My correction requests</div>
+              <div className={styles.cardTitle}>My requests</div>
               {myRequests.map((r) => (
                 <div className={styles.holidayRow} key={r.id}>
-                  <span>{r.date} · {r.reason}</span>
+                  <span>{r.date} · {regKindLabel(r.kind)} · {r.reason}</span>
                   <span className={`${styles.badge} ${r.status === 'Approved' ? styles.bPresent : r.status === 'Rejected' ? styles.bAbsent : styles.bOther}`}>{r.status}</span>
                 </div>
               ))}
@@ -455,11 +543,11 @@ export default function AttendancePage() {
         <>
           {pending.length > 0 && (
             <div className={styles.card}>
-              <div className={styles.cardTitle}>Pending correction approvals ({pending.length})</div>
+              <div className={styles.cardTitle}>Pending attendance approvals ({pending.length})</div>
               {pending.map((r) => (
                 <div className={styles.holidayRow} key={r.id}>
                   <span>
-                    <strong>{r.employeeName ?? r.userId}</strong> · {r.date} · {fmtTime(r.requestedCheckInAt)}–{fmtTime(r.requestedCheckOutAt)} · {r.reason}
+                    <strong>{r.employeeName ?? r.userId}</strong> · {regKindLabel(r.kind)} · {r.date} · {fmtTime(r.requestedCheckInAt)}{r.requestedCheckOutAt ? `–${fmtTime(r.requestedCheckOutAt)}` : ''} · {r.reason}
                   </span>
                   <span className={styles.rowActions}>
                     <button className={`${styles.btn} ${styles.btnGhostOk}`} onClick={() => decide(r.id, true)}>Approve</button>
@@ -731,6 +819,60 @@ export default function AttendancePage() {
               <button className={`${styles.btn} ${styles.btnPrimary}`} type="submit">Add holiday</button>
             </form>
           </div>
+
+          <div className={styles.card}>
+            <div className={styles.cardTitle} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <span>Biometric devices</span>
+              <button className={styles.btn} disabled={deviceBusy} onClick={doReconcile}>Re-sync now</button>
+            </div>
+            <div className={styles.muted} style={{ marginBottom: 'var(--space-3)' }}>
+              A device appears here automatically the first time it pushes to the server. A new device is <strong>Pending</strong>: its punches are stored but only become attendance once you <strong>Enable</strong> it.
+            </div>
+            {devices.length ? (
+              devices.map((d) => (
+                <div className={styles.holidayRow} key={d.id}>
+                  <span>
+                    <strong>{d.label || d.serial}</strong>{' '}
+                    <span className={`${styles.badge} ${d.status === 'Enabled' ? styles.bPresent : d.status === 'Disabled' ? styles.bAbsent : styles.bOther}`}>{d.status}</span>
+                    {' '}· {d.punchCount} punches · last seen {fmtDateTime(d.lastSeenAt)}
+                  </span>
+                  <span className={styles.rowActions}>
+                    {d.status !== 'Enabled' && (
+                      <button className={`${styles.btn} ${styles.btnPrimary}`} disabled={deviceBusy} onClick={() => setDeviceStatus(d.id, 'Enabled')}>Enable</button>
+                    )}
+                    {d.status !== 'Disabled' && (
+                      <button className={`${styles.btn} ${styles.btnGhostDanger}`} disabled={deviceBusy} onClick={() => setDeviceStatus(d.id, 'Disabled')}>Disable</button>
+                    )}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className={styles.muted}>No devices have connected yet.</div>
+            )}
+          </div>
+
+          {unmapped.length > 0 && (
+            <div className={styles.card}>
+              <div className={styles.cardTitle}>Unlinked device IDs ({unmapped.length})</div>
+              <div className={styles.muted} style={{ marginBottom: 'var(--space-3)' }}>
+                These PINs punched on a device but aren&apos;t linked to an employee yet. Assign each one so its attendance is recorded (and set it as the employee&apos;s Device ID on their profile).
+              </div>
+              {unmapped.map((u) => (
+                <div className={styles.holidayRow} key={`${u.deviceSerial}:${u.pin}`}>
+                  <span><strong>PIN {u.pin}</strong> · {u.punchCount} punches · {u.deviceSerial}</span>
+                  <span className={styles.rowActions}>
+                    <select className={styles.input} value={mapPick[u.pin] ?? ''} onChange={(e) => setMapPick((m) => ({ ...m, [u.pin]: e.target.value }))} aria-label={`Assign PIN ${u.pin}`}>
+                      <option value="">Assign to…</option>
+                      {people.map((p) => (
+                        <option key={p.userId} value={p.userId}>{p.fullName} — {p.email}</option>
+                      ))}
+                    </select>
+                    <button className={`${styles.btn} ${styles.btnPrimary}`} disabled={deviceBusy || !mapPick[u.pin]} onClick={() => doMapPin(u.pin)}>Assign</button>
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </>
       )}
     </>
