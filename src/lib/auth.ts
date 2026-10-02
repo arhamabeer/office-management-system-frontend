@@ -42,6 +42,11 @@ import type {
   NotificationCountDTO,
   NotificationPrefsDTO,
   AnnouncementDTO,
+  ComplaintCategoryDTO,
+  ComplaintDTO,
+  InventoryCategoryDTO,
+  InventoryRequestDTO,
+  RequestAction,
 } from '@ems/types';
 import { api } from './api';
 import { getAccessToken } from './authToken';
@@ -336,6 +341,43 @@ export const expensesApi = {
       `${P}/expenses/claims/export?scope=${scope}${year ? `&year=${year}` : ''}`,
       `expense-claims-${scope}.xlsx`,
     ),
+};
+
+/** Scope for the routable-request lists (complaints, inventory). */
+export type RequestScope = 'mine' | 'inbox' | 'all';
+
+export const complaintsApi = {
+  categories: () => api.get<ComplaintCategoryDTO[]>(`${P}/complaints/categories`),
+  createCategory: (body: Record<string, unknown>) =>
+    api.post<ComplaintCategoryDTO>(`${P}/complaints/categories`, body),
+  updateCategory: (id: string, body: Record<string, unknown>) =>
+    api.patch<ComplaintCategoryDTO>(`${P}/complaints/categories/${id}`, body),
+  deactivateCategory: (id: string) => api.delete<{ success: boolean }>(`${P}/complaints/categories/${id}`),
+  list: (scope: RequestScope) => api.get<ComplaintDTO[]>(`${P}/complaints`, { scope }),
+  get: (id: string) => api.get<ComplaintDTO>(`${P}/complaints/${id}`),
+  create: (body: { categoryId: string; subject: string; reason: string; details?: string }) =>
+    api.post<ComplaintDTO>(`${P}/complaints`, body),
+  decide: (id: string, body: { action: RequestAction; note?: string }) =>
+    api.patch<ComplaintDTO>(`${P}/complaints/${id}/decide`, body),
+  exportList: (scope: RequestScope) =>
+    downloadBlob(`${P}/complaints/export?scope=${scope}`, `complaints-${scope}.xlsx`),
+};
+
+export const inventoryApi = {
+  categories: () => api.get<InventoryCategoryDTO[]>(`${P}/inventory-requests/categories`),
+  createCategory: (body: Record<string, unknown>) =>
+    api.post<InventoryCategoryDTO>(`${P}/inventory-requests/categories`, body),
+  updateCategory: (id: string, body: Record<string, unknown>) =>
+    api.patch<InventoryCategoryDTO>(`${P}/inventory-requests/categories/${id}`, body),
+  deactivateCategory: (id: string) => api.delete<{ success: boolean }>(`${P}/inventory-requests/categories/${id}`),
+  list: (scope: RequestScope) => api.get<InventoryRequestDTO[]>(`${P}/inventory-requests`, { scope }),
+  get: (id: string) => api.get<InventoryRequestDTO>(`${P}/inventory-requests/${id}`),
+  create: (body: { categoryId: string; itemName: string; quantity: number; neededBy?: string; reason: string; details?: string }) =>
+    api.post<InventoryRequestDTO>(`${P}/inventory-requests`, body),
+  decide: (id: string, body: { action: RequestAction; note?: string }) =>
+    api.patch<InventoryRequestDTO>(`${P}/inventory-requests/${id}/decide`, body),
+  exportList: (scope: RequestScope) =>
+    downloadBlob(`${P}/inventory-requests/export?scope=${scope}`, `inventory-requests-${scope}.xlsx`),
 };
 
 /** Format a money amount as "PKR 123,456". */

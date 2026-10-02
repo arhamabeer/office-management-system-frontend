@@ -19,7 +19,7 @@ interface ApprovalsState {
   refresh: () => Promise<void>;
 }
 
-const EMPTY: ApprovalsCountDTO = { regularizations: 0, leaves: 0, total: 0 };
+const EMPTY: ApprovalsCountDTO = { regularizations: 0, leaves: 0, complaints: 0, inventoryRequests: 0, total: 0 };
 const ApprovalsCtx = createContext<ApprovalsState | undefined>(undefined);
 
 /**

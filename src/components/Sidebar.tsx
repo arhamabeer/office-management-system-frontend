@@ -31,6 +31,8 @@ const MAIN: Item[] = [
   { label: 'Leaves', href: '/leaves', icon: icon('M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z') },
   { label: 'Payroll', href: '/payroll', icon: icon('M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6') },
   { label: 'Expenses', href: '/expenses', icon: icon('M3 6h18v12H3zM3 10h18M7 15h4') },
+  { label: 'Complaints', href: '/complaints', icon: icon('M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z') },
+  { label: 'Inventory', href: '/inventory-requests', icon: icon('M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16zM3.27 7L12 12l8.73-5M12 22V12') },
   { label: 'Notices', href: '/notices', icon: icon('M3 10v4a1 1 0 001 1h3l5 4V5L7 9H4a1 1 0 00-1 1zM16 9a4 4 0 010 6') },
   { label: 'Employees', href: '/employees', icon: icon('M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8z') },
   { label: 'Profile', href: '/profile', icon: icon('M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z') },

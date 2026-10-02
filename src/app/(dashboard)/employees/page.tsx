@@ -6,7 +6,7 @@ import { employeesApi, departmentsApi } from '@/lib/auth';
 import { useAuth } from '@/context/AuthContext';
 import styles from './employees.module.css';
 
-const ORG_ROLES = ['Member', 'Lead', 'Manager', 'Admin'] as const;
+const ORG_ROLES = ['Member', 'Lead', 'Manager', 'Admin', 'Operations'] as const;
 const PAGE_SIZE = 10;
 
 function initials(name: string): string {
@@ -29,10 +29,12 @@ const emptyForm = {
 
 export default function EmployeesPage() {
   const { user, isOrgAdmin, canManageEmployees } = useAuth();
-  // Only an Owner can grant Admin; only Owner/Admin can grant Manager — so
-  // Managers are limited to Member/Lead in every role picker.
+  // Only an Owner can grant Admin; only Owner/Admin can grant Manager or the
+  // Operations handler role — so Managers are limited to Member/Lead everywhere.
   const roleDisabled = (r: string): boolean =>
-    (r === 'Admin' && user?.accountType !== 'Owner') || (r === 'Manager' && !isOrgAdmin);
+    (r === 'Admin' && user?.accountType !== 'Owner') ||
+    (r === 'Manager' && !isOrgAdmin) ||
+    (r === 'Operations' && !isOrgAdmin);
   const [data, setData] = useState<Paginated<EmployeeProfileDTO> | null>(null);
   const [departments, setDepartments] = useState<DepartmentDTO[]>([]);
   const [q, setQ] = useState('');
@@ -312,9 +314,12 @@ export default function EmployeesPage() {
             ) : data && data.items.length ? (
               data.items.map((emp) => {
                 const isSelf = emp.userId === user?.id;
-                // A Manager cannot change someone who is already Manager/Admin/Owner.
+                // A Manager cannot change someone who is already Manager/Admin/Operations/Owner.
                 const elevatedTarget =
-                  emp.orgRole === 'Manager' || emp.orgRole === 'Admin' || emp.accountType === 'Owner';
+                  emp.orgRole === 'Manager' ||
+                  emp.orgRole === 'Admin' ||
+                  emp.orgRole === 'Operations' ||
+                  emp.accountType === 'Owner';
                 const statusClass =
                   emp.status === 'Active'
                     ? styles.statusActive
