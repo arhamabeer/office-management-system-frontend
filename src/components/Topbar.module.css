@@ -33,6 +33,14 @@
   width: 100%;
   font-size: var(--fs-sm);
 }
+.search:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--ui-ring);
+}
+/* The pill shows the focus ring; the borderless inner input shouldn't double it. */
+.search input:focus-visible {
+  box-shadow: none;
+}
 
 .spacer {
   flex: 1;

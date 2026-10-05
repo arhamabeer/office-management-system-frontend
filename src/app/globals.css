@@ -13,6 +13,14 @@ body {
   height: 100%;
 }
 
+:root {
+  /* Frontend-only UI polish helpers. The brand/theme tokens come from
+     theme.generated.css (@ems/config); these are presentation-only and local. */
+  --ui-transition: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --ui-ring: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  --ui-primary-soft: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
+
 body {
   background: var(--color-bg);
   color: var(--color-text);
@@ -22,6 +30,7 @@ body {
   line-height: var(--lh-normal);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -29,7 +38,7 @@ a {
   text-decoration: none;
 }
 a:hover {
-  text-decoration: underline;
+  color: var(--color-primary);
 }
 
 code,
@@ -40,9 +49,89 @@ pre {
 button {
   font-family: inherit;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+/* Gentle tactile press on clickable controls (never on disabled ones). */
+button:not(:disabled):active,
+[role='button']:not([aria-disabled='true']):active {
+  transform: translateY(1px);
 }
 
+img {
+  max-width: 100%;
+}
+
+/* Consistent, smooth interaction feedback on every control. */
+button,
+a,
+input,
+select,
+textarea,
+[role='button'] {
+  transition:
+    background-color var(--ui-transition),
+    border-color var(--ui-transition),
+    color var(--ui-transition),
+    box-shadow var(--ui-transition),
+    transform var(--ui-transition),
+    opacity var(--ui-transition);
+}
+
+/* Keyboard focus: crisp ring for buttons/links, a soft brand ring for fields. */
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+:where(input, select, textarea):focus-visible {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--ui-ring);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+
+/* Subtle, theme-aware scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-full);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-gray);
+}
+
+/* A gentle row hover on every data table. */
+tbody tr {
+  transition: background-color var(--ui-transition);
+}
+tbody tr:hover {
+  background: color-mix(in srgb, var(--color-surface-alt) 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
 }

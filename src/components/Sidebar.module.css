@@ -104,6 +104,7 @@
 .itemActive {
   background: color-mix(in srgb, var(--color-primary) 12%, transparent);
   color: var(--color-primary-strong);
+  font-weight: var(--fw-semibold);
 }
 
 .icon {
