@@ -29,7 +29,6 @@ const MAIN: Item[] = [
   { label: 'Dashboard', href: '/', icon: icon('M3 12l9-9 9 9M5 10v10h14V10') },
   { label: 'Attendance', href: '/attendance', icon: icon('M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 012 2v12a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z') },
   { label: 'Leaves', href: '/leaves', icon: icon('M12 22s8-4 8-11V5l-8-3-8 3v6c0 7 8 11 8 11z') },
-  { label: 'Performance', href: '/performance', icon: icon('M12 2a10 10 0 100 20 10 10 0 000-20zM12 7a5 5 0 100 10 5 5 0 000-10zM12 11a1 1 0 100 2 1 1 0 000-2z') },
   { label: 'Payroll', href: '/payroll', icon: icon('M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6') },
   { label: 'Expenses', href: '/expenses', icon: icon('M3 6h18v12H3zM3 10h18M7 15h4') },
   { label: 'Complaints', href: '/complaints', icon: icon('M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z') },
