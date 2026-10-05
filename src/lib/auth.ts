@@ -47,6 +47,13 @@ import type {
   InventoryCategoryDTO,
   InventoryRequestDTO,
   RequestAction,
+  GoalCategoryDTO,
+  PerformancePolicyDTO,
+  ReviewCycleDTO,
+  GoalDTO,
+  ReviewDTO,
+  BusinessCardDTO,
+  CompanyProfileDTO,
 } from '@ems/types';
 import { api } from './api';
 import { getAccessToken } from './authToken';
@@ -378,6 +385,38 @@ export const inventoryApi = {
     api.patch<InventoryRequestDTO>(`${P}/inventory-requests/${id}/decide`, body),
   exportList: (scope: RequestScope) =>
     downloadBlob(`${P}/inventory-requests/export?scope=${scope}`, `inventory-requests-${scope}.xlsx`),
+};
+
+export const performanceApi = {
+  categories: () => api.get<GoalCategoryDTO[]>(`${P}/performance/categories`),
+  createCategory: (body: Record<string, unknown>) => api.post<GoalCategoryDTO>(`${P}/performance/categories`, body),
+  updateCategory: (id: string, body: Record<string, unknown>) => api.patch<GoalCategoryDTO>(`${P}/performance/categories/${id}`, body),
+  deactivateCategory: (id: string) => api.delete<{ success: boolean }>(`${P}/performance/categories/${id}`),
+  policy: () => api.get<PerformancePolicyDTO>(`${P}/performance/policy`),
+  updatePolicy: (body: Partial<PerformancePolicyDTO>) => api.put<PerformancePolicyDTO>(`${P}/performance/policy`, body),
+  cycles: () => api.get<ReviewCycleDTO[]>(`${P}/performance/cycles`),
+  createCycle: (body: { name: string; startDate: string; endDate: string }) => api.post<ReviewCycleDTO>(`${P}/performance/cycles`, body),
+  updateCycle: (id: string, body: { name?: string; status?: 'Open' | 'Closed' }) => api.patch<ReviewCycleDTO>(`${P}/performance/cycles/${id}`, body),
+  goals: (scope: 'mine' | 'team' | 'all', cycleId?: string) =>
+    api.get<GoalDTO[]>(`${P}/performance/goals`, { scope, ...(cycleId ? { cycleId } : {}) }),
+  createGoal: (body: Record<string, unknown>) => api.post<GoalDTO>(`${P}/performance/goals`, body),
+  updateGoal: (id: string, body: Record<string, unknown>) => api.patch<GoalDTO>(`${P}/performance/goals/${id}`, body),
+  submitGoal: (id: string) => api.patch<GoalDTO>(`${P}/performance/goals/${id}/submit`, {}),
+  completeGoal: (id: string) => api.patch<GoalDTO>(`${P}/performance/goals/${id}/complete`, {}),
+  approveGoal: (id: string, note?: string) => api.patch<GoalDTO>(`${P}/performance/goals/${id}/approve`, { note }),
+  rejectGoal: (id: string, note?: string) => api.patch<GoalDTO>(`${P}/performance/goals/${id}/reject`, { note }),
+  reviews: (scope: 'mine' | 'team', cycleId?: string) =>
+    api.get<ReviewDTO[]>(`${P}/performance/reviews`, { scope, ...(cycleId ? { cycleId } : {}) }),
+  upsertReview: (body: Record<string, unknown>) => api.post<ReviewDTO>(`${P}/performance/reviews`, body),
+  shareReview: (id: string) => api.patch<ReviewDTO>(`${P}/performance/reviews/${id}/share`, {}),
+};
+
+export const businessCardApi = {
+  myCard: () => api.get<BusinessCardDTO>(`${P}/business-card`),
+  company: () => api.get<CompanyProfileDTO>(`${P}/business-card/company`),
+  updateCompany: (body: Partial<CompanyProfileDTO>) => api.put<CompanyProfileDTO>(`${P}/business-card/company`, body),
+  downloadVcard: () => downloadBlob(`${P}/business-card/vcard`, 'contact.vcf'),
+  downloadPdf: () => downloadBlob(`${P}/business-card/pdf`, 'business-card.pdf'),
 };
 
 /** Format a money amount as "PKR 123,456". */
