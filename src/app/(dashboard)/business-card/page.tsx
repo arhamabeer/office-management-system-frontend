@@ -13,6 +13,23 @@ function errMsg(e: unknown): string {
 
 const emptyCompany = { companyName: '', website: '', address: '', phone: '', tagline: '' };
 
+function MailIcon() {
+  return (
+    <svg className={styles.cIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3.5 7 8.5 6 8.5-6" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg className={styles.cIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 5a1 1 0 0 1 1-1h2.2a1 1 0 0 1 1 .75l.8 3a1 1 0 0 1-.28 1L7.6 10.4a12 12 0 0 0 6 6l1.65-1.12a1 1 0 0 1 1-.28l3 .8a1 1 0 0 1 .75 1V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5Z" />
+    </svg>
+  );
+}
+
 export default function BusinessCardPage() {
   const { isOrgAdmin } = useAuth();
   const [card, setCard] = useState<BusinessCardDTO | null>(null);
@@ -81,6 +98,10 @@ export default function BusinessCardPage() {
     }
   };
 
+  const companyMeta = card
+    ? [card.company.website, card.company.address].filter(Boolean).join(' · ') || card.company.companyName
+    : '';
+
   return (
     <>
       <div className={styles.header}>
@@ -96,28 +117,29 @@ export default function BusinessCardPage() {
       ) : (
         <div className={styles.wrap}>
           <div className={styles.card}>
-            <div className={styles.band} />
-            <div className={styles.body}>
-              <div className={styles.main}>
-                <Image className={styles.logo} src={card.brand.logo} alt={card.company.companyName} width={120} height={22} unoptimized priority />
-                <div className={styles.name}>{card.employee.fullName}</div>
-                {card.employee.designation && <div className={styles.role}>{card.employee.designation}</div>}
-                {card.employee.department && <div className={styles.dept}>{card.employee.department}</div>}
-                <div className={styles.divider} />
+            <span className={styles.spine} aria-hidden="true" />
+            <div className={styles.inner}>
+              <div className={styles.identity}>
+                <Image className={styles.logo} src={card.brand.logo} alt={card.company.companyName} width={180} height={26} unoptimized priority />
+                <div className={styles.nameBlock}>
+                  <div className={styles.name}>{card.employee.fullName}</div>
+                  {card.employee.designation && <div className={styles.role}>{card.employee.designation}</div>}
+                  {card.employee.department && <div className={styles.dept}>{card.employee.department}</div>}
+                </div>
+                <div className={styles.rule} />
                 <div className={styles.contact}>
-                  <div className={styles.cRow}><span className={styles.cLabel}>Email</span><span className={styles.cVal}>{card.employee.email}</span></div>
-                  {(card.employee.phone || card.company.phone) && <div className={styles.cRow}><span className={styles.cLabel}>Phone</span><span className={styles.cVal}>{card.employee.phone ?? card.company.phone}</span></div>}
-                  {card.employee.employeeCode && <div className={styles.cRow}><span className={styles.cLabel}>ID</span><span className={styles.cVal}>{card.employee.employeeCode}</span></div>}
+                  <div className={styles.cRow}><MailIcon /><span className={styles.cVal}>{card.employee.email}</span></div>
+                  {(card.employee.phone || card.company.phone) && (
+                    <div className={styles.cRow}><PhoneIcon /><span className={styles.cVal}>{card.employee.phone ?? card.company.phone}</span></div>
+                  )}
                 </div>
-                <div className={styles.companyLine}>
-                  {card.company.companyName}
-                  {card.company.website ? ` · ${card.company.website}` : ''}
-                  {card.company.address ? ` · ${card.company.address}` : ''}
-                </div>
+                {companyMeta && <div className={styles.footer}>{companyMeta}</div>}
               </div>
-              <div className={styles.qrBox}>
-                <img className={styles.qr} src={card.qrDataUrl} alt="Contact QR code" />
-                <div className={styles.qrCap}>Scan to save my contact</div>
+              <div className={styles.qrZone}>
+                <div className={styles.qrPanel}>
+                  <img className={styles.qr} src={card.qrDataUrl} alt="Contact QR code" />
+                </div>
+                <div className={styles.qrCap}>Scan to save contact</div>
               </div>
             </div>
           </div>

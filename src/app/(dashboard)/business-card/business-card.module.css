@@ -6,36 +6,151 @@
 .bannerError { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
 .bannerInfo { background: color-mix(in srgb, var(--color-info) 14%, transparent); color: var(--color-info); }
 
-.wrap { max-width: 560px; }
+.wrap { max-width: 600px; }
 
-/* The card itself */
-.card { position: relative; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
-.band { height: 8px; background: linear-gradient(90deg, var(--color-primary), color-mix(in srgb, var(--color-primary) 55%, #ffffff)); }
-.body { padding: var(--space-6); display: flex; gap: var(--space-5); align-items: flex-start; }
-.main { flex: 1; min-width: 0; }
-.logo { height: 22px; width: auto; margin-bottom: var(--space-4); }
-.name { font-size: var(--fs-2xl); font-weight: var(--fw-bold); letter-spacing: -0.02em; line-height: 1.1; }
-.role { color: var(--color-primary-strong); font-weight: var(--fw-semibold); font-size: var(--fs-md); margin-top: 4px; }
-.dept { color: var(--color-text-muted); font-size: var(--fs-sm); margin-top: 2px; }
-.divider { height: 1px; background: var(--color-border); margin: var(--space-4) 0; }
-.contact { display: grid; gap: 8px; }
-.cRow { display: flex; gap: var(--space-3); align-items: baseline; font-size: var(--fs-sm); }
-.cLabel { color: var(--color-text-muted); width: 58px; flex: none; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 0.05em; }
-.cVal { color: var(--color-text); word-break: break-word; }
-.companyLine { margin-top: var(--space-4); font-size: var(--fs-xs); color: var(--color-text-muted); }
+/* ------------------------------------------------------------------ the card
+   A restrained "corporate stationery" object: one white field, a single 4px
+   orange spine as the only bright accent, the name as the hero, and a quiet
+   seated QR panel. No gradient band, no label column. */
+.card {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 18px 40px -12px rgba(16, 24, 40, 0.14);
+  overflow: hidden;
+}
+/* The single deliberate accent — a non-text mark, so the bright hue is allowed. */
+.spine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-primary);
+}
 
-.qrBox { text-align: center; flex: none; }
-.qr { width: 136px; height: 136px; display: block; border-radius: var(--radius-md); border: 1px solid var(--color-border); background: #fff; }
-.qrCap { font-size: var(--fs-xs); color: var(--color-text-muted); margin-top: 6px; max-width: 136px; }
+.inner {
+  display: flex;
+  gap: var(--space-8);
+  align-items: stretch;
+  padding: 36px 36px 28px 40px;
+}
 
-.actions { display: flex; gap: var(--space-2); margin-top: var(--space-4); flex-wrap: wrap; }
-.btn { border: 1px solid var(--color-border); background: var(--color-surface); color: var(--color-text); border-radius: var(--radius-md); padding: 8px 14px; font-size: var(--fs-sm); font-weight: var(--fw-medium); }
+/* identity column — one left baseline for logo, name, role, contacts, footer */
+.identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.logo {
+  height: 26px;
+  width: auto;
+  max-width: 180px;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.nameBlock { margin-top: 28px; }
+.name {
+  font-size: 28px;
+  font-weight: var(--fw-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--color-text);
+}
+.role {
+  margin-top: 6px;
+  font-size: 14px;
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
+  color: var(--color-primary-strong);
+}
+.dept {
+  margin-top: 3px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.rule {
+  height: 1px;
+  background: var(--color-border);
+  margin: 22px 0;
+}
+
+.contact { display: flex; flex-direction: column; gap: 10px; }
+.cRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+  min-width: 0;
+}
+.cIcon {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  color: var(--color-text-muted);
+}
+.cVal { word-break: break-word; }
+
+/* quiet colophon, pinned to the bottom of the identity column */
+.footer {
+  margin-top: auto;
+  padding-top: 24px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+  word-break: break-word;
+}
+
+/* QR — a subordinate, seated object, vertically centred in its rail */
+.qrZone {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.qrPanel {
+  padding: 10px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+.qr { width: 126px; height: 126px; display: block; }
+.qrCap {
+  margin-top: 10px;
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* actions — one dominant primary, one quiet secondary */
+.actions { display: flex; gap: var(--space-3); margin-top: var(--space-5); flex-wrap: wrap; }
+.btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+}
 .btn:hover:not(:disabled) { background: var(--color-surface-alt); }
 .btnPrimary { background: var(--color-primary-fill); color: var(--color-on-primary); border-color: transparent; }
 .btnPrimary:hover:not(:disabled) { background: var(--color-primary-fill-hover); }
 
-/* Admin company editor */
-.adminCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-sm); margin-top: var(--space-6); max-width: 560px; }
+/* admin company editor */
+.adminCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-sm); margin-top: var(--space-6); max-width: 600px; }
 .cardTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); margin-bottom: var(--space-3); }
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .formField { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
@@ -43,8 +158,10 @@
 .input { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-md); padding: 8px 10px; color: var(--color-text); font-size: var(--fs-sm); width: 100%; }
 .formActions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
 
-@media (max-width: 520px) {
-  .body { flex-direction: column-reverse; align-items: center; text-align: center; }
-  .contact { text-align: left; }
+@media (max-width: 560px) {
+  .inner { flex-direction: column; gap: var(--space-6); padding: 28px 24px 24px 28px; }
+  .qrZone { align-items: flex-start; }
+  .footer { padding-top: var(--space-5); }
+  .name { font-size: 24px; }
   .formGrid { grid-template-columns: 1fr; }
 }
