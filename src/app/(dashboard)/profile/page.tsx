@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { authApi, employeesApi, notificationsApi } from '@/lib/auth';
 import PasswordChecklist, { passwordValid } from '@/components/PasswordChecklist';
@@ -183,6 +184,9 @@ export default function ProfilePage() {
           <button className={styles.button} type="submit" disabled={saving}>
             {saving ? 'Saving…' : 'Change password'}
           </button>
+          <Link href="/forgot-password" className={styles.forgotLink}>
+            Forgot your password?
+          </Link>
         </div>
       </form>
 

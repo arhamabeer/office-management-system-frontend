@@ -115,7 +115,22 @@
   font-size: var(--fs-sm);
   color: var(--color-success);
 }
-.pwActions { margin-top: var(--space-4); }
+.pwActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}
+.forgotLink {
+  margin-left: auto;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--color-primary-strong);
+}
+.forgotLink:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
 .button {
   background: var(--color-primary-fill);
   color: var(--color-on-primary);
