@@ -178,7 +178,7 @@ export default function ApprovalsPage() {
         <button className={`${styles.tab} ${tab === 'leaves' ? styles.tabActive : ''}`} aria-pressed={tab === 'leaves'} onClick={() => setTab('leaves')}>Leaves ({counts.leaves})</button>
         <button className={`${styles.tab} ${tab === 'regs' ? styles.tabActive : ''}`} aria-pressed={tab === 'regs'} onClick={() => setTab('regs')}>Regularizations ({counts.regs})</button>
         <button className={`${styles.tab} ${tab === 'complaints' ? styles.tabActive : ''}`} aria-pressed={tab === 'complaints'} onClick={() => setTab('complaints')}>Complaints ({counts.complaints})</button>
-        <button className={`${styles.tab} ${tab === 'inventory' ? styles.tabActive : ''}`} aria-pressed={tab === 'inventory'} onClick={() => setTab('inventory')}>Inventory ({counts.inventory})</button>
+        <button className={`${styles.tab} ${tab === 'inventory' ? styles.tabActive : ''}`} aria-pressed={tab === 'inventory'} onClick={() => setTab('inventory')}>Inventory Requests ({counts.inventory})</button>
       </div>
 
       {loading ? (
