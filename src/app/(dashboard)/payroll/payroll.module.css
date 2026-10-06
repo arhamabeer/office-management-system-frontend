@@ -52,3 +52,24 @@
 .formActions { display: flex; gap: var(--space-2); margin-top: var(--space-3); flex-wrap: wrap; }
 .empty { padding: var(--space-8); text-align: center; color: var(--color-text-muted); }
 .muted { color: var(--color-text-muted); font-size: var(--fs-sm); }
+
+/* money input — currency prefix, live grouping, no spinners */
+.money { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-md); padding: 6px 10px; width: 100%; max-width: 160px; box-sizing: border-box; }
+.money:focus-within { border-color: var(--color-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent); }
+.moneyInvalid, .moneyInvalid:focus-within { border-color: var(--color-danger); box-shadow: none; }
+.moneyCur { font-size: var(--fs-xs); color: var(--color-text-muted); font-weight: var(--fw-medium); }
+.moneyField { border: none; background: transparent; color: var(--color-text); font-size: var(--fs-sm); width: 100%; min-width: 0; text-align: right; font-variant-numeric: tabular-nums; outline: none; padding: 0; }
+.moneyField::placeholder { color: var(--color-text-muted); font-style: italic; }
+
+.rowErr { font-size: var(--fs-xs); color: var(--color-danger); margin-top: 3px; text-align: right; }
+.rowDirty td { background: color-mix(in srgb, var(--color-primary) 6%, transparent); }
+.rowActions { display: flex; align-items: center; gap: var(--space-2); justify-content: flex-end; }
+.linkBtn { border: none; background: none; color: var(--color-text-muted); font-size: var(--fs-xs); cursor: pointer; padding: 0; }
+.linkBtn:hover:not(:disabled) { color: var(--color-text); text-decoration: underline; }
+.empName { display: flex; align-items: center; gap: var(--space-2); font-weight: var(--fw-medium); flex-wrap: wrap; }
+.notSet { font-size: var(--fs-xs); color: var(--color-text-muted); font-style: italic; }
+
+/* automatic-payroll settings */
+.switchRow { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; }
+.autoDayRow { display: flex; align-items: center; gap: var(--space-2); margin-top: var(--space-3); font-size: var(--fs-sm); color: var(--color-text); flex-wrap: wrap; }
+.dim { opacity: 0.5; }

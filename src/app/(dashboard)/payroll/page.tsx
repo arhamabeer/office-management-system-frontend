@@ -25,6 +25,46 @@ function curMonth(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
+function ordinal(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return `${n}${s[(v - 20) % 10] ?? s[v] ?? s[0]}`;
+}
+
+/** A polished money field: currency prefix, live thousands grouping, no spinners. */
+function MoneyInput({
+  value,
+  onChange,
+  currency,
+  label,
+  invalid,
+  onEnter,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  currency: string;
+  label: string;
+  invalid?: boolean;
+  onEnter?: () => void;
+}) {
+  const display = value === '' ? '' : Number(value).toLocaleString('en-US');
+  return (
+    <div className={`${styles.money} ${invalid ? styles.moneyInvalid : ''}`}>
+      <span className={styles.moneyCur}>{currency}</span>
+      <input
+        className={styles.moneyField}
+        inputMode="numeric"
+        aria-label={label}
+        value={display}
+        placeholder="Not set"
+        onChange={(e) => onChange(e.target.value.replace(/[^\d]/g, ''))}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && onEnter) onEnter();
+        }}
+      />
+    </div>
+  );
+}
 
 type Tab = 'my' | 'salaries' | 'runs' | 'settings';
 
@@ -43,6 +83,7 @@ export default function PayrollPage() {
   const [salaryRows, setSalaryRows] = useState<EmployeeSalaryRowDTO[]>([]);
   const [edits, setEdits] = useState<Record<string, { annualSalary: string; annualTax: string }>>({});
   const [savingRow, setSavingRow] = useState<string | null>(null);
+  const [q, setQ] = useState('');
 
   const [runs, setRuns] = useState<PayrollRunDTO[]>([]);
   const [runMonth, setRunMonth] = useState(curMonth());
@@ -106,7 +147,10 @@ export default function PayrollPage() {
   }, [loadMy]);
   useEffect(() => {
     if (tab === 'salaries') void loadSalaries();
-    if (tab === 'runs') void loadRuns();
+    if (tab === 'runs') {
+      void loadRuns();
+      void loadSettings();
+    }
     if (tab === 'settings') void loadSettings();
   }, [tab, loadSalaries, loadRuns, loadSettings]);
 
@@ -132,6 +176,26 @@ export default function PayrollPage() {
       setSavingRow(null);
     }
   };
+
+  const savedOf = (r: EmployeeSalaryRowDTO) => ({
+    annualSalary: r.annualSalary != null ? String(r.annualSalary) : '',
+    annualTax: r.annualTax != null ? String(r.annualTax) : '',
+  });
+  const rowDirty = (r: EmployeeSalaryRowDTO) => {
+    const d = edits[r.userId];
+    const s = savedOf(r);
+    return !!d && (d.annualSalary !== s.annualSalary || d.annualTax !== s.annualTax);
+  };
+  const rowTaxError = (r: EmployeeSalaryRowDTO) => {
+    const d = edits[r.userId];
+    if (!d) return false;
+    return (Number(d.annualTax) || 0) > (Number(d.annualSalary) || 0);
+  };
+  const resetRow = (r: EmployeeSalaryRowDTO) => setEdits((e) => ({ ...e, [r.userId]: savedOf(r) }));
+  const filteredRows = salaryRows.filter((r) => {
+    const t = q.trim().toLowerCase();
+    return !t || r.fullName.toLowerCase().includes(t) || r.email.toLowerCase().includes(t);
+  });
 
   const runPayroll = async () => {
     setError(null);
@@ -241,63 +305,86 @@ export default function PayrollPage() {
 
       {tab === 'salaries' && isOrgAdmin && (
         <>
-        <div className={styles.toolbar}>
-          <div style={{ flex: 1 }} />
-          <button className={styles.btn} onClick={() => payrollApi.exportSalaries().catch((e) => setError(errMsg(e)))}>
-            Export Excel
-          </button>
-        </div>
-        <div className={styles.tableWrap}>
-          <table className={styles.table} style={{ minWidth: 760 }}>
-            <thead>
-              <tr>
-                <th scope="col">Employee</th>
-                <th scope="col" className={styles.num}>Annual salary</th>
-                <th scope="col" className={styles.num}>Annual tax</th>
-                <th scope="col" className={styles.num}>Monthly salary</th>
-                <th scope="col" className={styles.num}>Monthly net</th>
-                <th scope="col"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {salaryRows.length ? (
-                salaryRows.map((r) => {
-                  const d = edits[r.userId] ?? { annualSalary: '', annualTax: '' };
-                  const aSal = Number(d.annualSalary) || 0;
-                  const aTax = Number(d.annualTax) || 0;
-                  return (
-                    <tr key={r.userId}>
-                      <td>
-                        {r.fullName}
-                        <div className={styles.muted}>{r.email}{r.status !== 'Active' ? ` · ${r.status}` : ''}</div>
-                      </td>
-                      <td className={styles.num}>
-                        <input className={styles.input} type="number" min={0} style={{ maxWidth: 130 }} aria-label={`Annual salary for ${r.fullName}`} value={d.annualSalary} onChange={(e) => setEdits({ ...edits, [r.userId]: { ...d, annualSalary: e.target.value } })} />
-                      </td>
-                      <td className={styles.num}>
-                        <input className={styles.input} type="number" min={0} style={{ maxWidth: 130 }} aria-label={`Annual tax for ${r.fullName}`} value={d.annualTax} onChange={(e) => setEdits({ ...edits, [r.userId]: { ...d, annualTax: e.target.value } })} />
-                      </td>
-                      <td className={styles.num}>{d.annualSalary ? fmtMoney(Math.round(aSal / 12), r.currency) : '—'}</td>
-                      <td className={styles.num}>{d.annualSalary ? fmtMoney(Math.round((aSal - aTax) / 12), r.currency) : '—'}</td>
-                      <td>
-                        <button className={`${styles.btn} ${styles.btnPrimary}`} disabled={savingRow === r.userId} onClick={() => saveRow(r)}>
-                          {savingRow === r.userId ? 'Saving…' : 'Save'}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr><td colSpan={6} className={styles.empty}>No employees.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+          <div className={styles.toolbar}>
+            <input className={styles.input} placeholder="Search employees…" aria-label="Search employees" value={q} onChange={(e) => setQ(e.target.value)} style={{ minWidth: 220 }} />
+            <div className={styles.spacer} />
+            <button className={styles.btn} onClick={() => payrollApi.exportSalaries().catch((e) => setError(errMsg(e)))}>Export Excel</button>
+          </div>
+          <div className={styles.tableWrap}>
+            <table className={styles.table} style={{ minWidth: 840 }}>
+              <thead>
+                <tr>
+                  <th scope="col">Employee</th>
+                  <th scope="col" className={styles.num}>Annual salary</th>
+                  <th scope="col" className={styles.num}>Annual tax</th>
+                  <th scope="col" className={styles.num}>Monthly</th>
+                  <th scope="col" className={styles.num}>Monthly net</th>
+                  <th scope="col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredRows.length ? (
+                  filteredRows.map((r) => {
+                    const d = edits[r.userId] ?? { annualSalary: '', annualTax: '' };
+                    const aSal = Number(d.annualSalary) || 0;
+                    const aTax = Number(d.annualTax) || 0;
+                    const dirty = rowDirty(r);
+                    const taxErr = rowTaxError(r);
+                    const hasVal = d.annualSalary !== '';
+                    return (
+                      <tr key={r.userId} className={dirty ? styles.rowDirty : ''}>
+                        <td>
+                          <div className={styles.empName}>
+                            <span>{r.fullName}</span>
+                            {r.status !== 'Active' && <span className={`${styles.badge} ${styles.bPaid}`}>{r.status}</span>}
+                            {!r.hasStructure && !hasVal && <span className={styles.notSet}>No salary set</span>}
+                          </div>
+                          <div className={styles.muted}>{r.email}</div>
+                        </td>
+                        <td className={styles.num}>
+                          <MoneyInput value={d.annualSalary} currency={r.currency} label={`Annual salary for ${r.fullName}`} invalid={taxErr}
+                            onChange={(v) => setEdits({ ...edits, [r.userId]: { ...d, annualSalary: v } })}
+                            onEnter={() => dirty && !taxErr && saveRow(r)} />
+                        </td>
+                        <td className={styles.num}>
+                          <MoneyInput value={d.annualTax} currency={r.currency} label={`Annual tax for ${r.fullName}`} invalid={taxErr}
+                            onChange={(v) => setEdits({ ...edits, [r.userId]: { ...d, annualTax: v } })}
+                            onEnter={() => dirty && !taxErr && saveRow(r)} />
+                          {taxErr && <div className={styles.rowErr}>Tax exceeds salary</div>}
+                        </td>
+                        <td className={styles.num}>{hasVal ? fmtMoney(Math.round(aSal / 12), r.currency) : '—'}</td>
+                        <td className={styles.num}>{hasVal ? fmtMoney(Math.round((aSal - aTax) / 12), r.currency) : '—'}</td>
+                        <td>
+                          <div className={styles.rowActions}>
+                            {dirty && (
+                              <button type="button" className={styles.linkBtn} onClick={() => resetRow(r)} disabled={savingRow === r.userId}>Reset</button>
+                            )}
+                            <button className={`${styles.btn} ${styles.btnSmall} ${styles.btnPrimary}`} disabled={!dirty || taxErr || savingRow === r.userId} onClick={() => saveRow(r)}>
+                              {savingRow === r.userId ? 'Saving…' : dirty ? 'Save' : 'Saved'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr><td colSpan={6} className={styles.empty}>{salaryRows.length ? 'No matching employees.' : 'No employees.'}</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </>
       )}
 
       {tab === 'runs' && isOrgAdmin && (
         <>
+          {settings && (
+            <div className={styles.notice}>
+              {settings.autoRunEnabled
+                ? `Automatic payroll is ON — it runs and finalizes for every employee on the ${ordinal(settings.payrollRunDay)} of each month, and emails them their payslip. You can still run a month manually below.`
+                : 'Automatic payroll is off — turn it on in Settings so payroll runs every month without you. You can also run a month manually below.'}
+            </div>
+          )}
           <div className={styles.toolbar}>
             <input className={styles.input} type="month" aria-label="Payroll month" value={runMonth} onChange={(e) => setRunMonth(e.target.value)} />
             <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={runPayroll}>Run payroll</button>
@@ -325,6 +412,31 @@ export default function PayrollPage() {
       )}
 
       {tab === 'settings' && isOrgAdmin && settings && (
+        <>
+        <div className={styles.card}>
+          <div className={styles.cardTitle}>Automatic payroll</div>
+          <label className={styles.switchRow}>
+            <input type="checkbox" checked={settings.autoRunEnabled} onChange={(e) => setSettings({ ...settings, autoRunEnabled: e.target.checked })} />
+            <span>Run payroll automatically every month</span>
+          </label>
+          <div className={`${styles.autoDayRow} ${settings.autoRunEnabled ? '' : styles.dim}`}>
+            <span>On the</span>
+            <select className={styles.select} disabled={!settings.autoRunEnabled} value={settings.payrollRunDay} onChange={(e) => setSettings({ ...settings, payrollRunDay: Number(e.target.value) })}>
+              {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                <option key={day} value={day}>{ordinal(day)}</option>
+              ))}
+            </select>
+            <span>of each month</span>
+          </div>
+          <div className={styles.muted} style={{ marginTop: 'var(--space-2)' }}>
+            On this day, payroll runs and finalizes for every active employee — their payslip and tax certificate update automatically and each person is emailed. Set it once; no monthly action needed.
+            {settings.autoRunEnabled ? ` Next run: the ${ordinal(settings.payrollRunDay)} of each month.` : ''}
+          </div>
+          <div className={styles.formActions}>
+            <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={saveSettings}>Save</button>
+          </div>
+        </div>
+
         <div className={styles.card}>
           <div className={styles.cardTitle}>Payroll settings</div>
           <div className={styles.formGrid}>
@@ -338,6 +450,7 @@ export default function PayrollPage() {
             <button className={`${styles.btn} ${styles.btnPrimary}`} onClick={saveSettings}>Save settings</button>
           </div>
         </div>
+        </>
       )}
     </>
   );
