@@ -119,7 +119,7 @@ export default function LettersPage() {
   // Recipient select → prefill name/email from the chosen employee.
   const onRecipientSel = (value: string) => {
     if (value === '' || value === EXTERNAL) {
-      setDetails((d) => ({ ...d, recipientSel: value, recipientName: value === EXTERNAL ? '' : '', recipientEmail: '' }));
+      setDetails((d) => ({ ...d, recipientSel: value, recipientName: '', recipientEmail: '', recipientLines: '' }));
       return;
     }
     const emp = employees.find((e) => e.id === value);
@@ -128,27 +128,29 @@ export default function LettersPage() {
       recipientSel: value,
       recipientName: emp?.fullName ?? '',
       recipientEmail: emp?.email ?? '',
+      recipientLines: '',
     }));
   };
 
   const templateValid = form.title.trim() && form.subject.trim() && form.body.trim();
 
+  // Empty strings (not undefined) so clearing an optional field actually persists.
   const templatePayload = () => ({
     title: form.title.trim(),
     subject: form.subject.trim(),
-    salutation: form.salutation.trim() || undefined,
+    salutation: form.salutation.trim(),
     body: form.body.trim(),
-    signatoryName: form.signatoryName.trim() || undefined,
-    signatoryTitle: form.signatoryTitle.trim() || undefined,
+    signatoryName: form.signatoryName.trim(),
+    signatoryTitle: form.signatoryTitle.trim(),
   });
 
+  // Download never needs an email, so it must not carry (and fail-validate) one.
   const renderPayload = () => ({
     ...templatePayload(),
     reference: details.reference.trim() || undefined,
     letterDate: details.letterDate.trim() || undefined,
     recipientName: details.recipientName.trim() || undefined,
     recipientLines: details.recipientLines.trim() || undefined,
-    recipientEmail: details.recipientEmail.trim() || undefined,
   });
 
   const saveTemplate = async (e: React.FormEvent) => {
