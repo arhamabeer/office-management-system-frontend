@@ -49,6 +49,7 @@ import type {
   RequestAction,
   BusinessCardDTO,
   CompanyProfileDTO,
+  LetterDTO,
 } from '@ems/types';
 import { api } from './api';
 import { getAccessToken } from './authToken';
@@ -388,6 +389,16 @@ export const businessCardApi = {
   updateCompany: (body: Partial<CompanyProfileDTO>) => api.put<CompanyProfileDTO>(`${P}/business-card/company`, body),
   downloadVcard: () => downloadBlob(`${P}/business-card/vcard`, 'contact.vcf'),
   downloadPdf: () => downloadBlob(`${P}/business-card/pdf`, 'business-card.pdf'),
+};
+
+/** Owner/Admin letter composer — letters print on the company letterhead. */
+export const lettersApi = {
+  list: () => api.get<LetterDTO[]>(`${P}/letters`),
+  get: (id: string) => api.get<LetterDTO>(`${P}/letters/${id}`),
+  create: (body: Record<string, unknown>) => api.post<LetterDTO>(`${P}/letters`, body),
+  update: (id: string, body: Record<string, unknown>) => api.patch<LetterDTO>(`${P}/letters/${id}`, body),
+  remove: (id: string) => api.delete<{ success: boolean }>(`${P}/letters/${id}`),
+  downloadPdf: (id: string, filename: string) => downloadBlob(`${P}/letters/${id}/pdf`, filename),
 };
 
 /** Format a money amount as "PKR 123,456". */

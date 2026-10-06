@@ -51,6 +51,12 @@ const TEAMS_ITEM: Item = {
   href: '/teams',
   icon: icon('M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 7a4 4 0 108 0 4 4 0 00-8 0M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75'),
 };
+// Owner/Admin only — compose letters on the company letterhead.
+const LETTERS_ITEM: Item = {
+  label: 'Letters',
+  href: '/letters',
+  icon: icon('M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1zM3 7l9 6 9-6'),
+};
 // Owner/Admin only.
 const AUDIT_ITEM: Item = {
   label: 'Audit Log',
@@ -117,7 +123,10 @@ export default function Sidebar() {
               />
               <NavLink item={TEAMS_ITEM} active={isActive(TEAMS_ITEM.href)} onNavigate={close} />
               {isOrgAdmin && (
-                <NavLink item={AUDIT_ITEM} active={isActive(AUDIT_ITEM.href)} onNavigate={close} />
+                <>
+                  <NavLink item={LETTERS_ITEM} active={isActive(LETTERS_ITEM.href)} onNavigate={close} />
+                  <NavLink item={AUDIT_ITEM} active={isActive(AUDIT_ITEM.href)} onNavigate={close} />
+                </>
               )}
             </>
           )}
