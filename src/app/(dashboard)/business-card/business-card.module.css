@@ -40,12 +40,12 @@
 
 .inner {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   height: 100%;
   gap: 4%;
-  padding: 6% 7% 6% 7%;
+  padding: 7% 7% 6% 7%;
 }
-.logoCol { flex: 0 0 40%; min-width: 0; display: flex; align-items: center; }
+.logoCol { flex: 0 0 40%; min-width: 0; display: flex; align-items: flex-start; }
 .logo { width: 100%; height: auto; max-width: 210px; object-fit: contain; }
 
 .details { flex: 1; min-width: 0; }
