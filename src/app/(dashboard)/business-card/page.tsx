@@ -123,7 +123,6 @@ export default function BusinessCardPage() {
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img className={styles.qr} src={card.qrDataUrl} alt="Scan to save contact" />
                         </div>
-                        <div className={styles.qrCap}>Scan to save contact</div>
                       </div>
                     )}
                   </div>
