@@ -6,135 +6,77 @@
 .bannerError { background: color-mix(in srgb, var(--color-danger) 12%, transparent); color: var(--color-danger); }
 .bannerInfo { background: color-mix(in srgb, var(--color-info) 14%, transparent); color: var(--color-info); }
 
-.wrap { max-width: 600px; }
+.wrap { max-width: 640px; }
 
-/* ------------------------------------------------------------------ the card
-   A restrained "corporate stationery" object: one white field, a single 4px
-   orange spine as the only bright accent, the name as the hero, and a quiet
-   seated QR panel. No gradient band, no label column. */
-.card {
-  position: relative;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow:
-    0 1px 2px rgba(16, 24, 40, 0.05),
-    0 18px 40px -12px rgba(16, 24, 40, 0.14);
-  overflow: hidden;
-}
-/* The single deliberate accent — a non-text mark, so the bright hue is allowed. */
-.spine {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  background: var(--color-primary);
-}
-
-.inner {
-  display: flex;
-  gap: var(--space-8);
-  align-items: stretch;
-  padding: 36px 36px 28px 40px;
-}
-
-/* identity column — one left baseline for logo, name, role, contacts, footer */
-.identity {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.logo {
-  height: 26px;
-  width: auto;
-  max-width: 180px;
-  object-fit: contain;
-  object-position: left center;
-}
-
-.nameBlock { margin-top: 28px; }
-.name {
-  font-size: 28px;
-  font-weight: var(--fw-bold);
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--color-text);
-}
-.role {
-  margin-top: 6px;
-  font-size: 14px;
-  font-weight: var(--fw-semibold);
-  letter-spacing: 0.01em;
-  color: var(--color-primary-strong);
-}
-.dept {
-  margin-top: 3px;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-
-.rule {
-  height: 1px;
-  background: var(--color-border);
-  margin: 22px 0;
-}
-
-.contact { display: flex; flex-direction: column; gap: 10px; }
-.cRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  color: var(--color-text);
-  min-width: 0;
-}
-.cIcon {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  color: var(--color-text-muted);
-}
-.cVal { word-break: break-word; }
-
-/* quiet colophon, pinned to the bottom of the identity column */
-.footer {
-  margin-top: auto;
-  padding-top: 24px;
-  font-size: 11px;
-  letter-spacing: 0.02em;
-  color: var(--color-text-muted);
-  word-break: break-word;
-}
-
-/* QR — a subordinate, seated object, vertically centred in its rail */
-.qrZone {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-.qrPanel {
-  padding: 10px;
-  background: #ffffff;
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  box-shadow: var(--shadow-sm);
-}
-.qr { width: 126px; height: 126px; display: block; }
-.qrCap {
-  margin-top: 10px;
-  font-size: 10px;
-  font-weight: var(--fw-semibold);
+/* The card is a physical white object regardless of the app theme, so its
+   colours are literal (not theme tokens) — it should look the same printed. */
+.cards { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-5); }
+.fig { margin: 0; }
+.cap {
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--color-text-muted);
-  text-align: center;
+  font-weight: var(--fw-semibold);
 }
 
-/* actions — one dominant primary, one quiet secondary */
+.frontCard,
+.backCard {
+  position: relative;
+  width: min(540px, 92vw);
+  aspect-ratio: 1.75 / 1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.06),
+    0 20px 44px -16px rgba(16, 24, 40, 0.28);
+}
+.frontCard { background: #ffffff; }
+.backCard { background: #fc6810; width: min(300px, 70vw); }
+
+/* thin orange rail down the right edge */
+.edge { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; background: #fc6810; }
+
+.inner {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  gap: 4%;
+  padding: 6% 7% 6% 7%;
+}
+.logoCol { flex: 0 0 40%; min-width: 0; display: flex; align-items: center; }
+.logo { width: 100%; height: auto; max-width: 210px; object-fit: contain; }
+
+.details { flex: 1; min-width: 0; }
+.name {
+  font-size: clamp(14px, 3.8vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  line-height: 1.12;
+  color: #4b4b4b;
+}
+.role { margin-top: 2px; font-size: clamp(9.5px, 2vw, 12px); color: #7c7c7c; }
+.address {
+  margin-top: clamp(6px, 1.8vw, 11px);
+  font-size: clamp(8.5px, 1.75vw, 11px);
+  line-height: 1.5;
+  color: #6b7280;
+}
+.contact {
+  margin-top: clamp(6px, 1.8vw, 11px);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: clamp(8.5px, 1.75vw, 11px);
+}
+.cRow { display: flex; gap: 5px; min-width: 0; align-items: baseline; }
+.cLabel { flex: 0 0 auto; width: 40px; color: #9aa0a6; }
+.cColon { color: #9aa0a6; flex: none; }
+.cVal { color: #4b5563; word-break: break-word; min-width: 0; }
+
+/* actions */
 .actions { display: flex; gap: var(--space-3); margin-top: var(--space-5); flex-wrap: wrap; }
 .btn {
   border: 1px solid var(--color-border);
@@ -144,24 +86,21 @@
   padding: 10px 16px;
   font-size: var(--fs-sm);
   font-weight: var(--fw-medium);
+  cursor: pointer;
 }
 .btn:hover:not(:disabled) { background: var(--color-surface-alt); }
 .btnPrimary { background: var(--color-primary-fill); color: var(--color-on-primary); border-color: transparent; }
 .btnPrimary:hover:not(:disabled) { background: var(--color-primary-fill-hover); }
 
 /* admin company editor */
-.adminCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-sm); margin-top: var(--space-6); max-width: 600px; }
-.cardTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); margin-bottom: var(--space-3); }
+.adminCard { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--space-5); box-shadow: var(--shadow-sm); margin-top: var(--space-6); max-width: 640px; }
+.cardTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); margin-bottom: var(--space-1); }
 .formGrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
 .formField { display: flex; flex-direction: column; gap: 4px; font-size: var(--fs-sm); }
 .full { grid-column: 1 / -1; }
-.input { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-md); padding: 8px 10px; color: var(--color-text); font-size: var(--fs-sm); width: 100%; }
+.input { border: 1px solid var(--color-border); background: var(--color-surface); border-radius: var(--radius-md); padding: 8px 10px; color: var(--color-text); font-size: var(--fs-sm); width: 100%; box-sizing: border-box; }
 .formActions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
 
 @media (max-width: 560px) {
-  .inner { flex-direction: column; gap: var(--space-6); padding: 28px 24px 24px 28px; }
-  .qrZone { align-items: flex-start; }
-  .footer { padding-top: var(--space-5); }
-  .name { font-size: 24px; }
   .formGrid { grid-template-columns: 1fr; }
 }
