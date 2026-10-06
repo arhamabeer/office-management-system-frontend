@@ -117,6 +117,15 @@ export default function BusinessCardPage() {
                 <div className={styles.inner}>
                   <div className={styles.logoCol}>
                     <Image className={styles.logo} src={card.brand.logo} alt={card.company.companyName} width={220} height={54} unoptimized priority />
+                    {card.qrDataUrl && (
+                      <div className={styles.qrZone}>
+                        <div className={styles.qrPanel}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img className={styles.qr} src={card.qrDataUrl} alt="Scan to save contact" />
+                        </div>
+                        <div className={styles.qrCap}>Scan to save contact</div>
+                      </div>
+                    )}
                   </div>
                   <div className={styles.details}>
                     <div className={styles.name}>{card.employee.fullName}</div>

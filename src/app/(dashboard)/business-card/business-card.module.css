@@ -67,8 +67,14 @@
   gap: 4%;
   padding: 7% 7% 6% 7%;
 }
-.logoCol { flex: 0 0 40%; min-width: 0; display: flex; align-items: flex-start; }
+.logoCol { flex: 0 0 40%; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; height: 100%; }
 .logo { width: 100%; height: auto; max-width: 210px; object-fit: contain; }
+
+/* scan-to-save QR, seated at the bottom of the left column */
+.qrZone { margin-top: auto; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.qrPanel { background: #ffffff; padding: 3px; border-radius: 6px; line-height: 0; }
+.qr { width: clamp(62px, 17vw, 92px); height: auto; display: block; }
+.qrCap { font-size: clamp(7px, 1.5vw, 9px); letter-spacing: 0.02em; color: #9aa0a6; }
 
 .details { flex: 1; min-width: 0; }
 .name {
