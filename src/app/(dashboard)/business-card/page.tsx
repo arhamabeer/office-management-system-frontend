@@ -141,7 +141,18 @@ export default function BusinessCardPage() {
             </figure>
 
             <figure className={styles.fig}>
-              <div className={styles.backCard} aria-hidden="true" />
+              <div className={styles.backCard}>
+                <div className={styles.backInner}>
+                  <Image className={styles.backLogo} src={card.brand.logo} alt={card.company.companyName} width={200} height={49} unoptimized />
+                  {card.company.tagline && <div className={styles.backTagline}>{card.company.tagline}</div>}
+                  <div className={styles.backContacts}>
+                    {card.company.website && <span>{stripProto(card.company.website)}</span>}
+                    {card.company.email && <span>{card.company.email}</span>}
+                    {card.company.phone && <span>{card.company.phone}</span>}
+                    {card.company.address && <span>{card.company.address}</span>}
+                  </div>
+                </div>
+              </div>
               <figcaption className={styles.cap}>Back</figcaption>
             </figure>
           </div>
