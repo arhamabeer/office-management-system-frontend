@@ -84,7 +84,25 @@
 .noticeBody { margin-top: var(--space-3); color: var(--color-text); font-size: var(--fs-sm); line-height: 1.6; white-space: pre-wrap; }
 .noticeMeta { margin-top: var(--space-3); font-size: var(--fs-xs); color: var(--color-text-muted); }
 
-.actions { display: flex; gap: var(--space-3); white-space: nowrap; }
+.actions { display: flex; gap: var(--space-3); white-space: nowrap; align-items: center; }
 .linkBtn { border: none; background: none; cursor: pointer; font-size: var(--fs-xs); color: var(--color-primary-strong); padding: 0; }
 .linkBtn:hover { text-decoration: underline; }
 .linkDanger { color: var(--color-danger); }
+
+/* sections + approval states */
+.section { margin-bottom: var(--space-5); }
+.sectionTitle {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: var(--fw-semibold);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-3);
+}
+.pendingNotice { border-left: 3px solid var(--color-info); }
+.rejectedNotice { border-left: 3px solid var(--color-danger); }
+.statusBadge { font-size: var(--fs-xs); font-weight: var(--fw-semibold); padding: 1px 8px; border-radius: var(--radius-full); }
+.statusPending { background: color-mix(in srgb, var(--color-info) 16%, transparent); color: var(--color-info); }
+.statusRejected { background: color-mix(in srgb, var(--color-danger) 14%, transparent); color: var(--color-danger); }
+.rejectReason { margin-top: var(--space-2); font-size: var(--fs-sm); color: var(--color-danger); }
+.btnSm { padding: 5px 12px; font-size: var(--fs-xs); }

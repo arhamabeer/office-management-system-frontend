@@ -49,7 +49,7 @@ import type {
   RequestAction,
   BusinessCardDTO,
   CompanyProfileDTO,
-  LetterDTO,
+  LetterTemplateDTO,
 } from '@ems/types';
 import { api } from './api';
 import { getAccessToken } from './authToken';
@@ -250,6 +250,35 @@ async function downloadBlob(path: string, filename: string): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
+/** Like downloadBlob, but POSTs a JSON body (for server-rendered, non-persisted files). */
+async function downloadBlobPost(path: string, body: unknown, filename: string): Promise<void> {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${getAccessToken() ?? ''}`, 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let msg = 'Download failed';
+    try {
+      const j = await res.json();
+      msg = j?.error?.message ?? j?.message ?? msg;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(msg);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const payrollApi = {
   salary: (userId?: string) =>
     api.get<SalaryStructureDTO | null>(`${P}/payroll/salary`, userId ? { userId } : undefined),
@@ -306,6 +335,8 @@ export const announcementsApi = {
   update: (id: string, body: Record<string, unknown>) =>
     api.patch<AnnouncementDTO>(`${P}/announcements/${id}`, body),
   remove: (id: string) => api.delete<{ success: boolean }>(`${P}/announcements/${id}`),
+  approve: (id: string) => api.post<AnnouncementDTO>(`${P}/announcements/${id}/approve`, {}),
+  reject: (id: string, note?: string) => api.post<AnnouncementDTO>(`${P}/announcements/${id}/reject`, { note }),
   markAllRead: () => api.post<{ updated: number }>(`${P}/announcements/read-all`, {}),
 };
 
@@ -391,14 +422,18 @@ export const businessCardApi = {
   downloadPdf: () => downloadBlob(`${P}/business-card/pdf`, 'business-card.pdf'),
 };
 
-/** Owner/Admin letter composer — letters print on the company letterhead. */
+/**
+ * Owner/Admin letters. Reusable templates are saved; a letter is produced by
+ * filling a template in for a recipient, then downloaded or emailed (not saved).
+ */
 export const lettersApi = {
-  list: () => api.get<LetterDTO[]>(`${P}/letters`),
-  get: (id: string) => api.get<LetterDTO>(`${P}/letters/${id}`),
-  create: (body: Record<string, unknown>) => api.post<LetterDTO>(`${P}/letters`, body),
-  update: (id: string, body: Record<string, unknown>) => api.patch<LetterDTO>(`${P}/letters/${id}`, body),
-  remove: (id: string) => api.delete<{ success: boolean }>(`${P}/letters/${id}`),
-  downloadPdf: (id: string, filename: string) => downloadBlob(`${P}/letters/${id}/pdf`, filename),
+  listTemplates: () => api.get<LetterTemplateDTO[]>(`${P}/letters/templates`),
+  getTemplate: (id: string) => api.get<LetterTemplateDTO>(`${P}/letters/templates/${id}`),
+  createTemplate: (body: Record<string, unknown>) => api.post<LetterTemplateDTO>(`${P}/letters/templates`, body),
+  updateTemplate: (id: string, body: Record<string, unknown>) => api.patch<LetterTemplateDTO>(`${P}/letters/templates/${id}`, body),
+  removeTemplate: (id: string) => api.delete<{ success: boolean }>(`${P}/letters/templates/${id}`),
+  render: (body: Record<string, unknown>, filename: string) => downloadBlobPost(`${P}/letters/render`, body, filename),
+  email: (body: Record<string, unknown>) => api.post<{ success: boolean }>(`${P}/letters/email`, body),
 };
 
 /** Format a money amount as "PKR 123,456". */

@@ -105,7 +105,10 @@
 .btnPrimary:hover:not(:disabled) { background: var(--color-primary-fill-hover); }
 .btnDanger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border)); }
 .btnDanger:hover:not(:disabled) { background: color-mix(in srgb, var(--color-danger) 10%, transparent); }
-.full.btn { width: 100%; }
+.fullBtn { width: 100%; }
+
+.sectionTitle { font-size: var(--fs-md); font-weight: var(--fw-semibold); margin-bottom: var(--space-3); }
+.divider { height: 1px; background: var(--color-border); margin: var(--space-5) 0; }
 
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }

@@ -1,40 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import type { LetterDTO } from '@ems/types';
-import { lettersApi } from '@/lib/auth';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { LetterTemplateDTO, EmployeeProfileDTO } from '@ems/types';
+import { lettersApi, employeesApi } from '@/lib/auth';
 import { useAuth } from '@/context/AuthContext';
 import styles from './letters.module.css';
 
 function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : 'Something went wrong';
 }
-
-type Form = {
-  title: string;
-  reference: string;
-  letterDate: string;
-  recipientName: string;
-  recipientLines: string;
-  salutation: string;
-  subject: string;
-  body: string;
-  signatoryName: string;
-  signatoryTitle: string;
-};
-
-const EMPTY: Form = {
-  title: '',
-  reference: '',
-  letterDate: '',
-  recipientName: '',
-  recipientLines: '',
-  salutation: 'Dear Sir/Madam,',
-  subject: '',
-  body: '',
-  signatoryName: '',
-  signatoryTitle: '',
-};
 
 function todayLong(): string {
   return new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -44,91 +18,59 @@ function slug(s: string): string {
   return s.replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'letter';
 }
 
-/** Starter templates — just pre-filled text the admin edits. Nothing is enforced. */
-type Template = { key: string; label: string; subject: string; salutation: string; body: string };
+/** The reusable template content. */
+type TemplateForm = {
+  title: string;
+  subject: string;
+  salutation: string;
+  body: string;
+  signatoryName: string;
+  signatoryTitle: string;
+};
 
-const TEMPLATES: Template[] = [
-  {
-    key: 'experience',
-    label: 'Experience Letter',
-    subject: 'To Whom It May Concern',
-    salutation: 'To Whom It May Concern,',
-    body:
-      'This is to certify that [Employee Name] was employed with [Company] as [Designation] from [Start Date] to [End Date].\n\n' +
-      'During this tenure, [he/she/they] was found to be sincere, hardworking and professional in all assigned responsibilities.\n\n' +
-      'We wish [him/her/them] all the best in [his/her/their] future endeavours.',
-  },
-  {
-    key: 'offer',
-    label: 'Offer Letter',
-    subject: 'Offer of Employment',
-    salutation: 'Dear [Candidate Name],',
-    body:
-      'We are pleased to offer you the position of [Designation] at [Company]. Your expected date of joining is [Join Date].\n\n' +
-      'Your gross monthly compensation will be [Amount], subject to the terms and policies of the company.\n\n' +
-      'Please sign and return a copy of this letter as a token of your acceptance. We look forward to welcoming you to the team.',
-  },
-  {
-    key: 'verification',
-    label: 'Employment / Salary Verification',
-    subject: 'Employment & Salary Verification',
-    salutation: 'To Whom It May Concern,',
-    body:
-      'This is to confirm that [Employee Name] is currently employed with [Company] as [Designation] since [Start Date].\n\n' +
-      '[His/Her/Their] current gross monthly salary is [Amount]. This letter is issued upon request for [purpose].\n\n' +
-      'Should you require any further information, please feel free to contact us.',
-  },
-  {
-    key: 'noc',
-    label: 'No Objection Certificate',
-    subject: 'No Objection Certificate',
-    salutation: 'To Whom It May Concern,',
-    body:
-      'This is to certify that [Employee Name], holding the position of [Designation] at [Company], has no objection from the organisation for [purpose, e.g. applying for a visa].\n\n' +
-      'This certificate is issued on [his/her/their] request and does not hold the company liable in any manner.',
-  },
-  {
-    key: 'warning',
-    label: 'Warning Letter',
-    subject: 'Written Warning',
-    salutation: 'Dear [Employee Name],',
-    body:
-      'This letter serves as a formal warning regarding [describe the issue, e.g. repeated late arrivals] observed on [date(s)].\n\n' +
-      'Such conduct is not in line with company policy and is expected to be corrected with immediate effect. Any recurrence may lead to further disciplinary action.\n\n' +
-      'You are advised to treat this matter with the seriousness it deserves.',
-  },
-  {
-    key: 'appreciation',
-    label: 'Appreciation Letter',
-    subject: 'Letter of Appreciation',
-    salutation: 'Dear [Employee Name],',
-    body:
-      'On behalf of [Company], I would like to express our sincere appreciation for your outstanding contribution to [project / achievement].\n\n' +
-      'Your dedication and commitment have set a strong example for the team. Thank you for your continued hard work.\n\n' +
-      'We look forward to your continued success with us.',
-  },
-];
+const EMPTY_TEMPLATE: TemplateForm = {
+  title: '',
+  subject: '',
+  salutation: 'Dear Sir/Madam,',
+  body: '',
+  signatoryName: '',
+  signatoryTitle: '',
+};
 
-function toForm(l: LetterDTO): Form {
+/** Per-letter details supplied at download/email time (never saved). */
+type LetterDetails = {
+  reference: string;
+  letterDate: string;
+  recipientSel: string; // '' | employeeId | '__external__'
+  recipientName: string;
+  recipientEmail: string;
+  recipientLines: string;
+};
+
+const EXTERNAL = '__external__';
+
+function emptyDetails(): LetterDetails {
+  return { reference: '', letterDate: todayLong(), recipientSel: '', recipientName: '', recipientEmail: '', recipientLines: '' };
+}
+
+function toForm(t: LetterTemplateDTO): TemplateForm {
   return {
-    title: l.title ?? '',
-    reference: l.reference ?? '',
-    letterDate: l.letterDate ?? '',
-    recipientName: l.recipientName ?? '',
-    recipientLines: l.recipientLines ?? '',
-    salutation: l.salutation ?? '',
-    subject: l.subject ?? '',
-    body: l.body ?? '',
-    signatoryName: l.signatoryName ?? '',
-    signatoryTitle: l.signatoryTitle ?? '',
+    title: t.title ?? '',
+    subject: t.subject ?? '',
+    salutation: t.salutation ?? '',
+    body: t.body ?? '',
+    signatoryName: t.signatoryName ?? '',
+    signatoryTitle: t.signatoryTitle ?? '',
   };
 }
 
 export default function LettersPage() {
   const { isOrgAdmin } = useAuth();
-  const [letters, setLetters] = useState<LetterDTO[]>([]);
+  const [templates, setTemplates] = useState<LetterTemplateDTO[]>([]);
+  const [employees, setEmployees] = useState<EmployeeProfileDTO[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [form, setForm] = useState<Form>({ ...EMPTY, letterDate: todayLong() });
+  const [form, setForm] = useState<TemplateForm>({ ...EMPTY_TEMPLATE });
+  const [details, setDetails] = useState<LetterDetails>(emptyDetails());
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,7 +80,12 @@ export default function LettersPage() {
     setLoading(true);
     setError(null);
     try {
-      setLetters(await lettersApi.list());
+      const [tpls, emps] = await Promise.all([
+        lettersApi.listTemplates(),
+        employeesApi.list({ pageSize: 100 }),
+      ]);
+      setTemplates(tpls);
+      setEmployees(emps.items);
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -151,66 +98,78 @@ export default function LettersPage() {
     else setLoading(false);
   }, [isOrgAdmin, load]);
 
-  const set = <K extends keyof Form>(key: K, value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const setF = <K extends keyof TemplateForm>(key: K, value: TemplateForm[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const setD = <K extends keyof LetterDetails>(key: K, value: LetterDetails[K]) => setDetails((d) => ({ ...d, [key]: value }));
 
-  const newLetter = () => {
+  const newTemplate = () => {
     setCurrentId(null);
-    setForm({ ...EMPTY, letterDate: todayLong() });
+    setForm({ ...EMPTY_TEMPLATE });
+    setDetails(emptyDetails());
     setInfo(null);
     setError(null);
   };
 
-  const openLetter = (l: LetterDTO) => {
-    setCurrentId(l.id);
-    setForm(toForm(l));
+  const openTemplate = (t: LetterTemplateDTO) => {
+    setCurrentId(t.id);
+    setForm(toForm(t));
     setInfo(null);
     setError(null);
   };
 
-  const applyTemplate = (key: string) => {
-    const t = TEMPLATES.find((x) => x.key === key);
-    if (!t) return;
-    setForm((f) => ({
-      ...f,
-      subject: t.subject,
-      salutation: t.salutation,
-      body: t.body,
-      title: f.title.trim() || t.label,
+  // Recipient select → prefill name/email from the chosen employee.
+  const onRecipientSel = (value: string) => {
+    if (value === '' || value === EXTERNAL) {
+      setDetails((d) => ({ ...d, recipientSel: value, recipientName: value === EXTERNAL ? '' : '', recipientEmail: '' }));
+      return;
+    }
+    const emp = employees.find((e) => e.id === value);
+    setDetails((d) => ({
+      ...d,
+      recipientSel: value,
+      recipientName: emp?.fullName ?? '',
+      recipientEmail: emp?.email ?? '',
     }));
   };
 
-  const payload = () => ({
+  const templateValid = form.title.trim() && form.subject.trim() && form.body.trim();
+
+  const templatePayload = () => ({
     title: form.title.trim(),
-    reference: form.reference.trim() || undefined,
-    letterDate: form.letterDate.trim() || undefined,
-    recipientName: form.recipientName.trim() || undefined,
-    recipientLines: form.recipientLines.trim() || undefined,
-    salutation: form.salutation.trim() || undefined,
     subject: form.subject.trim(),
+    salutation: form.salutation.trim() || undefined,
     body: form.body.trim(),
     signatoryName: form.signatoryName.trim() || undefined,
     signatoryTitle: form.signatoryTitle.trim() || undefined,
   });
 
-  const save = async (e: React.FormEvent) => {
+  const renderPayload = () => ({
+    ...templatePayload(),
+    reference: details.reference.trim() || undefined,
+    letterDate: details.letterDate.trim() || undefined,
+    recipientName: details.recipientName.trim() || undefined,
+    recipientLines: details.recipientLines.trim() || undefined,
+    recipientEmail: details.recipientEmail.trim() || undefined,
+  });
+
+  const saveTemplate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    if (!form.title.trim() || !form.subject.trim() || !form.body.trim()) {
+    if (!templateValid) {
       setError('Title, subject and body are required.');
       return;
     }
     setBusy(true);
     try {
       if (currentId) {
-        const updated = await lettersApi.update(currentId, payload());
-        setInfo('Letter saved.');
+        const updated = await lettersApi.updateTemplate(currentId, templatePayload());
         setForm(toForm(updated));
+        setInfo('Template saved.');
       } else {
-        const created = await lettersApi.create(payload());
+        const created = await lettersApi.createTemplate(templatePayload());
         setCurrentId(created.id);
         setForm(toForm(created));
-        setInfo('Letter created.');
+        setInfo('Template created.');
       }
       await load();
     } catch (err) {
@@ -220,26 +179,16 @@ export default function LettersPage() {
     }
   };
 
-  const download = async () => {
+  const removeTemplate = async () => {
     if (!currentId) return;
-    setError(null);
-    try {
-      await lettersApi.downloadPdf(currentId, `${slug(form.title)}.pdf`);
-    } catch (e) {
-      setError(errMsg(e));
-    }
-  };
-
-  const remove = async () => {
-    if (!currentId) return;
-    if (!window.confirm('Delete this letter? This cannot be undone.')) return;
+    if (!window.confirm('Delete this template? This cannot be undone.')) return;
     setBusy(true);
     setError(null);
     try {
-      await lettersApi.remove(currentId);
-      newLetter();
+      await lettersApi.removeTemplate(currentId);
+      newTemplate();
       await load();
-      setInfo('Letter deleted.');
+      setInfo('Template deleted.');
     } catch (e) {
       setError(errMsg(e));
     } finally {
@@ -247,15 +196,58 @@ export default function LettersPage() {
     }
   };
 
+  const download = async () => {
+    setError(null);
+    setInfo(null);
+    if (!templateValid) {
+      setError('Fill in the subject and body before downloading.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await lettersApi.render(renderPayload(), `${slug(form.title || form.subject)}.pdf`);
+      setInfo('Letter downloaded.');
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sendEmail = async () => {
+    setError(null);
+    setInfo(null);
+    if (!templateValid) {
+      setError('Fill in the subject and body before sending.');
+      return;
+    }
+    if (!details.recipientEmail.trim()) {
+      setError('A recipient email is required to send the letter.');
+      return;
+    }
+    setBusy(true);
+    try {
+      await lettersApi.email({ ...renderPayload(), recipientEmail: details.recipientEmail.trim() });
+      setInfo(`Letter emailed to ${details.recipientEmail.trim()}.`);
+    } catch (e) {
+      setError(errMsg(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sortedEmployees = useMemo(
+    () => [...employees].sort((a, b) => a.fullName.localeCompare(b.fullName)),
+    [employees],
+  );
+
   if (!isOrgAdmin) {
     return (
       <>
         <div className={styles.header}>
           <h1 className={styles.title}>Letters</h1>
         </div>
-        <div className={`${styles.banner} ${styles.bannerError}`}>
-          Letters are available to Owners and Admins only.
-        </div>
+        <div className={`${styles.banner} ${styles.bannerError}`}>Letters are available to Owners and Admins only.</div>
       </>
     );
   }
@@ -265,8 +257,8 @@ export default function LettersPage() {
       <div className={styles.header}>
         <h1 className={styles.title}>Letters</h1>
         <p className={styles.subtitle}>
-          Compose any letter on the company letterhead — experience letters, offers, verifications, and more.
-          Save it and download a print-ready PDF.
+          Keep reusable templates on the company letterhead. Open one, choose a recipient, then download a PDF or
+          email it — the filled-in letter isn&apos;t saved, only the template.
         </p>
       </div>
 
@@ -275,25 +267,25 @@ export default function LettersPage() {
 
       <div className={styles.layout}>
         <aside className={styles.listCol}>
-          <button type="button" className={`${styles.btn} ${styles.btnPrimary} ${styles.full}`} onClick={newLetter}>
-            + New letter
+          <button type="button" className={`${styles.btn} ${styles.btnPrimary} ${styles.fullBtn}`} onClick={newTemplate}>
+            + New template
           </button>
-          <div className={styles.listTitle}>Saved letters</div>
+          <div className={styles.listTitle}>Templates</div>
           {loading ? (
             <div className={styles.muted}>Loading…</div>
-          ) : letters.length === 0 ? (
-            <div className={styles.muted}>No letters yet.</div>
+          ) : templates.length === 0 ? (
+            <div className={styles.muted}>No templates yet.</div>
           ) : (
             <ul className={styles.list}>
-              {letters.map((l) => (
-                <li key={l.id}>
+              {templates.map((t) => (
+                <li key={t.id}>
                   <button
                     type="button"
-                    className={`${styles.listItem} ${currentId === l.id ? styles.listItemActive : ''}`}
-                    onClick={() => openLetter(l)}
+                    className={`${styles.listItem} ${currentId === t.id ? styles.listItemActive : ''}`}
+                    onClick={() => openTemplate(t)}
                   >
-                    <span className={styles.listItemTitle}>{l.title}</span>
-                    <span className={styles.listItemMeta}>{l.letterDate || new Date(l.updatedAt).toLocaleDateString('en-GB')}</span>
+                    <span className={styles.listItemTitle}>{t.title}</span>
+                    <span className={styles.listItemMeta}>{t.subject}</span>
                   </button>
                 </li>
               ))}
@@ -301,90 +293,102 @@ export default function LettersPage() {
           )}
         </aside>
 
-        <form className={styles.editor} onSubmit={save}>
-          <div className={styles.toolbar}>
-            <label className={styles.tplField}>
-              <span className={styles.tplLabel}>Start from a template</span>
-              <select
-                className={styles.input}
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) applyTemplate(e.target.value);
-                  e.target.value = '';
-                }}
-              >
-                <option value="">Choose a template…</option>
-                {TEMPLATES.map((t) => (
-                  <option key={t.key} value={t.key}>{t.label}</option>
-                ))}
-              </select>
-            </label>
-          </div>
+        <div className={styles.editor}>
+          {/* ---- Template content ---- */}
+          <form onSubmit={saveTemplate}>
+            <div className={styles.sectionTitle}>{currentId ? 'Edit template' : 'New template'}</div>
+            <div className={styles.grid}>
+              <label className={`${styles.field} ${styles.full}`}>
+                <span>Template name <span className={styles.req}>*</span> <span className={styles.hint}>(for your list — not printed)</span></span>
+                <input className={styles.input} value={form.title} onChange={(e) => setF('title', e.target.value)} placeholder="Experience Letter" />
+              </label>
+              <label className={`${styles.field} ${styles.full}`}>
+                <span>Subject <span className={styles.req}>*</span></span>
+                <input className={styles.input} value={form.subject} onChange={(e) => setF('subject', e.target.value)} placeholder="To Whom It May Concern" />
+              </label>
+              <label className={styles.field}>
+                <span>Salutation</span>
+                <input className={styles.input} value={form.salutation} onChange={(e) => setF('salutation', e.target.value)} placeholder="Dear Sir/Madam," />
+              </label>
+              <label className={`${styles.field} ${styles.full}`}>
+                <span>Body <span className={styles.req}>*</span> <span className={styles.hint}>(blank line = new paragraph; [placeholders] are fine)</span></span>
+                <textarea className={styles.textarea} rows={11} value={form.body} onChange={(e) => setF('body', e.target.value)} placeholder="Write the letter here…" />
+              </label>
+              <label className={styles.field}>
+                <span>Signatory name</span>
+                <input className={styles.input} value={form.signatoryName} onChange={(e) => setF('signatoryName', e.target.value)} placeholder="Abdul Rafay" />
+              </label>
+              <label className={styles.field}>
+                <span>Signatory title</span>
+                <input className={styles.input} value={form.signatoryTitle} onChange={(e) => setF('signatoryTitle', e.target.value)} placeholder="Chief Executive Officer" />
+              </label>
+            </div>
+            <div className={styles.actions}>
+              <button className={`${styles.btn} ${styles.btnPrimary}`} type="submit" disabled={busy}>
+                {currentId ? 'Save template' : 'Create template'}
+              </button>
+              {currentId && (
+                <button className={`${styles.btn} ${styles.btnDanger}`} type="button" onClick={removeTemplate} disabled={busy}>
+                  Delete template
+                </button>
+              )}
+            </div>
+          </form>
 
+          {/* ---- Recipient + delivery ---- */}
+          <div className={styles.divider} />
+          <div className={styles.sectionTitle}>Recipient &amp; delivery</div>
           <div className={styles.grid}>
-            <label className={`${styles.field} ${styles.full}`}>
-              <span>Title <span className={styles.req}>*</span> <span className={styles.hint}>(for your list only — not printed)</span></span>
-              <input className={styles.input} value={form.title} onChange={(e) => set('title', e.target.value)} placeholder="Experience Letter — Wasif Aleem" />
-            </label>
-
             <label className={styles.field}>
-              <span>Reference</span>
-              <input className={styles.input} value={form.reference} onChange={(e) => set('reference', e.target.value)} placeholder="BC/HR/2026/014" />
+              <span>Recipient</span>
+              <select className={styles.input} value={details.recipientSel} onChange={(e) => onRecipientSel(e.target.value)}>
+                <option value="">Select a recipient…</option>
+                <optgroup label="Employees">
+                  {sortedEmployees.map((e) => (
+                    <option key={e.id} value={e.id}>{e.fullName}{e.designation ? ` — ${e.designation}` : ''}</option>
+                  ))}
+                </optgroup>
+                <option value={EXTERNAL}>External recipient…</option>
+              </select>
             </label>
             <label className={styles.field}>
               <span>Date</span>
-              <input className={styles.input} value={form.letterDate} onChange={(e) => set('letterDate', e.target.value)} placeholder={todayLong()} />
+              <input className={styles.input} value={details.letterDate} onChange={(e) => setD('letterDate', e.target.value)} placeholder={todayLong()} />
             </label>
 
-            <label className={styles.field}>
-              <span>Recipient name</span>
-              <input className={styles.input} value={form.recipientName} onChange={(e) => set('recipientName', e.target.value)} placeholder="The Manager" />
-            </label>
-            <label className={styles.field}>
-              <span>Recipient address <span className={styles.hint}>(one line each)</span></span>
-              <textarea className={styles.textarea} rows={3} value={form.recipientLines} onChange={(e) => set('recipientLines', e.target.value)} placeholder={'Habib Bank Limited\nShahrah-e-Faisal Branch\nKarachi'} />
-            </label>
-
-            <label className={`${styles.field} ${styles.full}`}>
-              <span>Subject <span className={styles.req}>*</span></span>
-              <input className={styles.input} value={form.subject} onChange={(e) => set('subject', e.target.value)} placeholder="To Whom It May Concern" />
-            </label>
-
-            <label className={styles.field}>
-              <span>Salutation</span>
-              <input className={styles.input} value={form.salutation} onChange={(e) => set('salutation', e.target.value)} placeholder="Dear Sir/Madam," />
-            </label>
-
-            <label className={`${styles.field} ${styles.full}`}>
-              <span>Body <span className={styles.req}>*</span> <span className={styles.hint}>(blank line = new paragraph)</span></span>
-              <textarea className={styles.textarea} rows={12} value={form.body} onChange={(e) => set('body', e.target.value)} placeholder="Write the letter here…" />
-            </label>
+            {details.recipientSel !== '' && (
+              <>
+                <label className={styles.field}>
+                  <span>Recipient name</span>
+                  <input className={styles.input} value={details.recipientName} onChange={(e) => setD('recipientName', e.target.value)} placeholder="The Manager" />
+                </label>
+                <label className={styles.field}>
+                  <span>Recipient email <span className={styles.hint}>(for sending)</span></span>
+                  <input className={styles.input} type="email" value={details.recipientEmail} onChange={(e) => setD('recipientEmail', e.target.value)} placeholder="name@example.com" />
+                </label>
+                <label className={`${styles.field} ${styles.full}`}>
+                  <span>Recipient address <span className={styles.hint}>(optional, one line each)</span></span>
+                  <textarea className={styles.textarea} rows={3} value={details.recipientLines} onChange={(e) => setD('recipientLines', e.target.value)} placeholder={'Habib Bank Limited\nShahrah-e-Faisal Branch\nKarachi'} />
+                </label>
+              </>
+            )}
 
             <label className={styles.field}>
-              <span>Signatory name</span>
-              <input className={styles.input} value={form.signatoryName} onChange={(e) => set('signatoryName', e.target.value)} placeholder="Abdul Rafay" />
-            </label>
-            <label className={styles.field}>
-              <span>Signatory title</span>
-              <input className={styles.input} value={form.signatoryTitle} onChange={(e) => set('signatoryTitle', e.target.value)} placeholder="Chief Executive Officer" />
+              <span>Reference</span>
+              <input className={styles.input} value={details.reference} onChange={(e) => setD('reference', e.target.value)} placeholder="BC/HR/2026/014" />
             </label>
           </div>
 
           <div className={styles.actions}>
-            <button className={`${styles.btn} ${styles.btnPrimary}`} type="submit" disabled={busy}>
-              {currentId ? 'Save changes' : 'Create letter'}
-            </button>
-            <button className={styles.btn} type="button" onClick={download} disabled={!currentId || busy}>
+            <button className={`${styles.btn} ${styles.btnPrimary}`} type="button" onClick={download} disabled={busy}>
               Download PDF
             </button>
-            {currentId && (
-              <button className={`${styles.btn} ${styles.btnDanger}`} type="button" onClick={remove} disabled={busy}>
-                Delete
-              </button>
-            )}
+            <button className={styles.btn} type="button" onClick={sendEmail} disabled={busy || !details.recipientEmail.trim()}>
+              Send email
+            </button>
           </div>
-          {!currentId && <p className={styles.muted}>Save the letter to enable the PDF download.</p>}
-        </form>
+          <p className={styles.muted}>Downloading and emailing use the current editor content — you can tweak the text for this recipient without changing the saved template.</p>
+        </div>
       </div>
     </>
   );
