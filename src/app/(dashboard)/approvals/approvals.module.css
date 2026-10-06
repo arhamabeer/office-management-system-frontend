@@ -49,5 +49,17 @@
 .bannerInfo { background: color-mix(in srgb, var(--color-info) 14%, transparent); color: var(--color-info); }
 
 .row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-border); font-size: var(--fs-sm); }
-.rowActions { display: flex; gap: var(--space-2); }
+.rowActions { display: flex; gap: var(--space-2); align-items: center; flex-wrap: wrap; }
+.fwdSelect {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-radius: var(--radius-md);
+  padding: 7px 10px;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+.fwdSelect:hover:not(:disabled) { background: var(--color-surface-alt); }
+.routedHint { margin-left: var(--space-2); font-size: var(--fs-xs); color: var(--color-text-muted); white-space: nowrap; }
 .empty { padding: var(--space-8); text-align: center; color: var(--color-text-muted); }

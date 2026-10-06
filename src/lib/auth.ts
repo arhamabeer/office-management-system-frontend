@@ -224,6 +224,8 @@ export const leavesApi = {
     api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/approve`, { comment }),
   reject: (id: string, comment?: string) =>
     api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/reject`, { comment }),
+  forward: (id: string, targets: ('Operations' | 'Admin')[], comment?: string) =>
+    api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/forward`, { targets, comment }),
   calendar: (month?: string) =>
     api.get<LeaveRequestDTO[]>(`${P}/leaves/calendar`, month ? { month } : undefined),
   exportRequests: (scope: 'mine' | 'pending' | 'team', year?: number) =>

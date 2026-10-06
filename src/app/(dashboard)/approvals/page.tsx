@@ -112,6 +112,22 @@ export default function ApprovalsPage() {
     [load, refreshBadge],
   );
 
+  const forwardLeave = useCallback(
+    async (id: string, targets: ('Operations' | 'Admin')[]) => {
+      setBusy(id);
+      setError(null);
+      try {
+        await leavesApi.forward(id, targets);
+        await Promise.all([load(), refreshBadge()]);
+      } catch (e) {
+        setError(errMsg(e));
+      } finally {
+        setBusy(null);
+      }
+    },
+    [load, refreshBadge],
+  );
+
   const decideComplaint = useCallback(
     async (id: string, action: RequestAction, note?: string) => {
       setBusy(id);
@@ -214,11 +230,36 @@ export default function ApprovalsPage() {
                                 : `${row.data.date} · ${fmtTime(row.data.requestedCheckInAt)}${row.data.requestedCheckOutAt ? `–${fmtTime(row.data.requestedCheckOutAt)}` : ''}`}
                             </td>
                             <td>{row.data.reason}</td>
-                            <td><span className={`${styles.badge} ${statusBadge(row.data.status)}`}>{row.data.status}</span></td>
+                            <td>
+                              <span className={`${styles.badge} ${statusBadge(row.data.status)}`}>{row.data.status}</span>
+                              {row.data.routedTo.length > 0 && (
+                                <span className={styles.routedHint}>→ {row.data.routedTo.join(' & ')}</span>
+                              )}
+                            </td>
                             <td>
                               <div className={styles.rowActions}>
                                 <button className={`${styles.btn} ${styles.btnGhostOk}`} disabled={isSelf || busy === row.id} onClick={() => decideRow(row, true)} title={isSelf ? 'You cannot approve your own request' : undefined}>Approve</button>
                                 <button className={`${styles.btn} ${styles.btnGhostDanger}`} disabled={isSelf || busy === row.id} onClick={() => decideRow(row, false)}>Reject</button>
+                                {row.kind === 'leave' && row.data.routedTo.length === 0 && !isSelf && (
+                                  <select
+                                    className={styles.fwdSelect}
+                                    aria-label="Forward leave request"
+                                    disabled={busy === row.id}
+                                    value=""
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      e.currentTarget.value = '';
+                                      if (!v) return;
+                                      const targets = (v === 'both' ? ['Operations', 'Admin'] : [v]) as ('Operations' | 'Admin')[];
+                                      void forwardLeave(row.id, targets);
+                                    }}
+                                  >
+                                    <option value="">Forward…</option>
+                                    <option value="Operations">To Operations</option>
+                                    <option value="Admin">To Admin</option>
+                                    <option value="both">To both</option>
+                                  </select>
+                                )}
                               </div>
                             </td>
                           </tr>
