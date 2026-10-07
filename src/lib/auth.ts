@@ -175,6 +175,8 @@ export const attendanceApi = {
     api.patch<RegularizationDTO>(`${P}/attendance/regularizations/${id}/approve`, { comment }),
   rejectRegularization: (id: string, comment?: string) =>
     api.patch<RegularizationDTO>(`${P}/attendance/regularizations/${id}/reject`, { comment }),
+  forwardRegularization: (id: string, comment?: string) =>
+    api.patch<RegularizationDTO>(`${P}/attendance/regularizations/${id}/forward`, { comment }),
   // --- biometric devices (Admin/Owner) ---
   devices: () => api.get<BiometricDeviceDTO[]>(`${P}/attendance/devices`),
   updateDevice: (id: string, body: { label?: string; status?: BiometricDeviceStatus }) =>
@@ -224,8 +226,8 @@ export const leavesApi = {
     api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/approve`, { comment }),
   reject: (id: string, comment?: string) =>
     api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/reject`, { comment }),
-  forward: (id: string, targets: ('Operations' | 'Admin')[], comment?: string) =>
-    api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/forward`, { targets, comment }),
+  forward: (id: string, comment?: string) =>
+    api.patch<LeaveRequestDTO>(`${P}/leaves/requests/${id}/forward`, { comment }),
   calendar: (month?: string) =>
     api.get<LeaveRequestDTO[]>(`${P}/leaves/calendar`, month ? { month } : undefined),
   exportRequests: (scope: 'mine' | 'pending' | 'team', year?: number) =>

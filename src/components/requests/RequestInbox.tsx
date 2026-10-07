@@ -31,9 +31,9 @@ function statusClass(s: RequestStatus): string {
 
 /**
  * The manager/handler inbox: a card per request with the stage-appropriate
- * actions. At the manager stage (Submitted) all 5 options are offered; at a
- * handler stage (Forwarded) Resolve/Reject, plus "→ Admin" when the current
- * actor is working the Operations queue.
+ * actions. The chain is strict — at the manager stage (Submitted) you may
+ * Resolve/Reject or forward to Operations; at the Operations queue (Forwarded)
+ * Resolve/Reject or escalate "→ Admin"; at the Admin queue, Resolve/Reject.
  */
 export default function RequestInbox({
   items,
@@ -46,8 +46,8 @@ export default function RequestInbox({
   busyId: string | null;
   emptyText?: string;
 }) {
-  const { user, isOrgAdmin } = useAuth();
-  const isOps = isOrgAdmin || user?.orgRole === 'Operations';
+  const { user } = useAuth();
+  const isOps = user?.orgRole === 'Operations';
   const [notes, setNotes] = useState<Record<string, string>>({});
 
   if (!items.length) return <div className={styles.empty}>{emptyText}</div>;
@@ -102,8 +102,6 @@ export default function RequestInbox({
                 <>
                   <span className={styles.actionDivider} aria-hidden="true" />
                   <button className={styles.btn} disabled={busy} onClick={() => act('forward_operations')}>→ Operations</button>
-                  <button className={styles.btn} disabled={busy} onClick={() => act('forward_admin')}>→ Admin</button>
-                  <button className={styles.btn} disabled={busy} onClick={() => act('forward_both')}>→ Both</button>
                 </>
               )}
               {actingOps && (

@@ -112,12 +112,14 @@ export default function ApprovalsPage() {
     [load, refreshBadge],
   );
 
-  const forwardLeave = useCallback(
-    async (id: string, targets: ('Operations' | 'Admin')[]) => {
-      setBusy(id);
+  // Escalate one step along the chain: manager → Operations, Operations → Admin.
+  const escalateRow = useCallback(
+    async (row: Row) => {
+      setBusy(row.id);
       setError(null);
       try {
-        await leavesApi.forward(id, targets);
+        if (row.kind === 'leave') await leavesApi.forward(row.id);
+        else await attendanceApi.forwardRegularization(row.id);
         await Promise.all([load(), refreshBadge()]);
       } catch (e) {
         setError(errMsg(e));
@@ -240,26 +242,17 @@ export default function ApprovalsPage() {
                               <div className={styles.rowActions}>
                                 <button className={`${styles.btn} ${styles.btnGhostOk}`} disabled={isSelf || busy === row.id} onClick={() => decideRow(row, true)} title={isSelf ? 'You cannot approve your own request' : undefined}>Approve</button>
                                 <button className={`${styles.btn} ${styles.btnGhostDanger}`} disabled={isSelf || busy === row.id} onClick={() => decideRow(row, false)}>Reject</button>
-                                {row.kind === 'leave' && row.data.routedTo.length === 0 && !isSelf && (
-                                  <select
-                                    className={styles.fwdSelect}
-                                    aria-label="Forward leave request"
-                                    disabled={busy === row.id}
-                                    value=""
-                                    onChange={(e) => {
-                                      const v = e.target.value;
-                                      e.currentTarget.value = '';
-                                      if (!v) return;
-                                      const targets = (v === 'both' ? ['Operations', 'Admin'] : [v]) as ('Operations' | 'Admin')[];
-                                      void forwardLeave(row.id, targets);
-                                    }}
-                                  >
-                                    <option value="">Forward…</option>
-                                    <option value="Operations">To Operations</option>
-                                    <option value="Admin">To Admin</option>
-                                    <option value="both">To both</option>
-                                  </select>
-                                )}
+                                {(() => {
+                                  const rt = row.data.routedTo;
+                                  const atManager = row.kind === 'leave' && rt.length === 0;
+                                  const atOps = rt.includes('Operations');
+                                  if (isSelf || !(atManager || atOps)) return null;
+                                  return (
+                                    <button className={styles.btn} disabled={busy === row.id} onClick={() => escalateRow(row)}>
+                                      {atManager ? '→ Operations' : '→ Admin'}
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             </td>
                           </tr>
